@@ -11,7 +11,8 @@
 #  - app services no longer depend on mcod-rdfdb (USE_RDF_DB=False) / discourse
 #  - nginx gets the aed.mcod.local alias (our backend proxy, see nginx/07-aed.conf.template)
 #  - extra service mcod-frontend: Angular `ng serve -c local` inside the fork network,
-#    so api.mcod.local resolves to nginx without touching the host /etc/hosts
+#    so api.mcod.local resolves to nginx without touching the host /etc/hosts;
+#    --prebundle=false: Vite prebundling breaks LeafletService's require("leaflet") (empty map tab)
 name: danegov-fork
 
 services:
@@ -139,7 +140,7 @@ services:
       - >-
         ( [ -f node_modules/.fork-installed ] && cmp -s package-lock.json node_modules/.fork-installed )
         || ( npm ci --no-audit --no-fund && cp package-lock.json node_modules/.fork-installed );
-        exec npx ng serve -c local --proxy-config proxy.local.conf.json --host 0.0.0.0 --port 4200
+        exec npx ng serve -c local --proxy-config proxy.local.conf.json --host 0.0.0.0 --port 4200 --prebundle=false
     networks:
       backend:
         ipv4_address: 172.28.18.120

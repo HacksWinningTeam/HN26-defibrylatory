@@ -14,6 +14,7 @@ code; **everything we change lives here** and is copied in by `setup.sh`.
 | `compose.override.yml` | project `danegov-fork`, subnet 172.28.18.0/24, only 80/443 (+127.0.0.1:8025) published, no rdfdb/discourse deps, unused services disabled, `aed.mcod.local` alias, `mcod-frontend` (ng serve) service, app services use image `mcod-app:local` | used in place (`-f`) |
 | `fork-compose.sh` | `docker compose -f docker-compose.local.yml -f compose.override.yml "$@"` run in `backend_latest/` | — |
 | `setup.sh` / `start.sh` / `stop.sh` | idempotent setup; start; stop (never `-v`) | — |
+| `publish_aed.py` / `publish.sh` | publish/refresh the national AED dataset in the fork (T06) | stdin of `manage.py shell` |
 
 `setup.sh` also creates empty dirs (bind-mount targets) `backend_latest/test-data`,
 `frontend_latest/node_modules`, `frontend_latest/.angular` (the real `node_modules` lives in
@@ -44,6 +45,44 @@ fork-config/fork-compose.sh run --rm --no-deps mcod-local-run python manage.py s
 
 **Always name services** with `fork-compose.sh up/build` (the override disables discourse
 etc. via a profile, but be explicit anyway).
+
+## Publish the national AED dataset (T06)
+
+Needs the fork running **and** our stack (`make up-d`, with harvested data), since the script
+downloads our exports through `https://aed.mcod.local`.
+
+```bash
+fork-config/publish.sh                    # idempotent; prints dataset + resource ids and task states
+AED_REVALIDATE=1 fork-config/publish.sh   # force re-upload + re-validation of every resource
+AED_BASE_URL=https://aed.<host> fork-config/publish.sh   # another base URL (e.g. Hetzner, T10)
+```
+
+What it does (`publish_aed.py`, piped into `manage.py shell` of `mcod-admin`):
+
+1. Organization **Misja AED**, dataset **Defibrylatory AED – zbiór ogólnopolski** (category Zdrowie/HEAL,
+   tags AED/defibrylatory/zdrowie/ratownictwo, update frequency daily, ODbL note in the licence conditions).
+2. Resources: CSV, XLSX, GeoJSON and the schema XLSX are **downloaded from our app and uploaded as files**
+   (link resources pointing outside the fork are "linked" upstream and never get table/map previews);
+   re-runs upload a new file only when the content changed. JSON is an **API** link resource to
+   `/api/1.4/resources/1/data` (a 22 MB JSON file would make the fork's Celery try every RDF parser on it).
+3. Waits for Celery to parse the CSV, sets all columns to `string` (coordinates `number`) and the map
+   columns `label=nazwa`, `b=szerokosc_geograficzna`, `l=dlugosc_geograficzna`, re-indexes (~10 s) and
+   refreshes the Elasticsearch documents.
+
+After a re-harvest in our app just run `fork-config/publish.sh` again.
+
+Check: `https://mcod.local/pl/dataset?q=defibrylatory` → dataset page → CSV resource → *Tabela* / *Mapa*;
+`https://api.mcod.local/1.4/datasets?q=defibrylatory`, `https://api.mcod.local/1.4/resources/<csv id>/geo`.
+
+**Manual fallback (admin, https://admin.mcod.local):** Instytucje → add "Misja AED"; Zbiory danych → add
+dataset (institution, category Zdrowie, tags, licence conditions); Zasoby → add resource with the CSV file
+(downloaded from `http://localhost:8000/api/exports/aed.csv`); after validation open the resource →
+*Typy danych*: set every column to *string* except the coordinates (*number*), save; *Mapy i wykresy*: pick
+*etykieta* = `nazwa`, *szerokość* = `szerokosc_geograficzna`, *długość* = `dlugosc_geograficzna`, save.
+
+Known limitations: the XLSX resources have no table preview (typed cells + trailing empty column fail the
+fork's goodtables check) — the CSV is the previewed resource. The fork's licence field only knows CC
+licences, so the portal shows "CC BY 4.0"; the ODbL 1.0 requirement is in the conditions and description.
 
 ## URLs & credentials (accept the self-signed certificate once per hostname)
 
@@ -76,6 +115,8 @@ Disabled: discourse(+sidekiq) (private registry image), flower, rdfdb (`USE_RDF_
   collides with another docker network (`src_default` 172.18.0.0/16); the override uses 172.28.18.0/24.
   If that collides too, change the subnet + all `ipv4_address` in `compose.override.yml` and the IPs in `backend.env`.
 - **502 on https://mcod.local**: Angular still compiling — `docker logs -f mcod-frontend`.
+- **Empty *Mapa* tab** (`Dynamic require of "leaflet" is not supported` in the console): `ng serve` must run
+  with `--prebundle=false` (set in `compose.override.yml`); recreate with `fork-compose.sh up -d mcod-frontend`.
 - **Upstream package changes**: `mcod-frontend` re-runs `npm ci` when `package-lock.json` changes.
 - **App image rebuild** (after changing Pipfile): `docker rmi mcod-app:local && fork-config/setup.sh`.
   Code changes in `backend_latest/mcod` need no rebuild (bind-mounted; api/admin auto-reload, restart celery).
