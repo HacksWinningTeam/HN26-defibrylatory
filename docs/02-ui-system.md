@@ -29,9 +29,12 @@ Track reusable components as tasks create or update them:
 | Component | Path | Purpose | Introduced In |
 | --- | --- | --- | --- |
 | `HealthStatusCard` | `frontend/src/components/HealthStatusCard.tsx` | Live API & DB connectivity banner pattern | Starter template |
-| `EmergencyBanner` | `frontend/src/components/EmergencyBanner.tsx` | "W nagłym wypadku dzwoń 112" `<aside>` with `tel:112` button, on `/` and `/mapa` | T07 (design) |
-| `Badge` | `frontend/src/components/ui/Badge.tsx` | Status pill, `variant: neutral/success/warning/error`, always icon + text (non-colour cue) | T07 (design) |
-| Warning tokens | `frontend/src/app/globals.css` | `--color-warning-bg/-border/-text/-badge/-on-badge` for every appearance mode (locked AED, restricted access) | T07 (design) |
+| `EmergencyBanner` | `frontend/src/components/EmergencyBanner.tsx` | "W nagłym wypadku dzwoń 112" `<aside>` with `tel:112` button, on `/` and `/mapa` | T07 |
+| `Badge` | `frontend/src/components/ui/Badge.tsx` | Status pill, `variant: neutral/success/warning/error`, always icon + text (non-colour cue) | T07 |
+| Warning tokens | `frontend/src/app/globals.css` | `--color-warning-bg/-border/-text/-badge/-on-badge` for every appearance mode (locked AED, restricted access) | T07 |
+
+| AED map styles | `frontend/src/app/globals.css` (`.aed-map`, `.aed-pin`, `.aed-pin--ranked`, `.aed-cluster`, `.aed-you`) | Leaflet overrides (44 px controls, token colours), AED pin (green `#00703c` + white outline), white ringed clusters, "Jesteś tutaj" marker | T07 |
+| `ExternalLink` | `frontend/src/components/aed/AedDetails.tsx` | New-tab link with ↗ icon + sr-only "(otwiera się w nowej karcie)" | T07 |
 
 ## Reference Assets (`docs/inputs/ui/`)
 

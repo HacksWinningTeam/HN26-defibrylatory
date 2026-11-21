@@ -20,15 +20,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div className="flex flex-col">
-            <p className="text-base font-bold tracking-tight text-[var(--color-text)]">
-              {t("Django + DRF + Next.js")}
-            </p>
-            <p className="text-sm font-medium text-[var(--color-text-muted)]">
-              {t("Docker Full-Stack Template")}
-            </p>
-          </div>
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <Link href="/" className="flex min-h-11 items-center gap-3 text-[var(--color-text)] no-underline">
+            <span aria-hidden="true" className="aed-pin h-10 w-10 shrink-0">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path fill="#fff" d="M12 21.6 3.4 13.2A5.4 5.4 0 0 1 12 6.4a5.4 5.4 0 0 1 8.6 6.8Z" />
+                <path fill="#00703c" d="M12.9 8.4 9.6 13.3h2.3l-.9 4.3 3.4-5.2h-2.4Z" />
+              </svg>
+            </span>
+            <span className="flex flex-col">
+              <span className="text-lg leading-tight font-extrabold tracking-tight">{t("Misja AED")}</span>
+              <span className="text-sm font-medium text-[var(--color-text-muted)]">
+                {t("Data that saves lives")}
+              </span>
+            </span>
+          </Link>
           <div className="flex flex-wrap items-center gap-3">
             <LanguageSelector />
             <AppearanceSelector />
@@ -36,15 +42,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
         {children}
       </main>
 
       <footer className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm text-[var(--color-text-muted)]">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 pr-20 text-sm text-[var(--color-text-muted)] sm:px-6 sm:pr-20">
           <span>
-            Django 5.2 LTS &middot; Django REST Framework &middot; drf-spectacular &middot;
-            PostgreSQL 18 &middot; Next.js 16
+            {t("Map data © OpenStreetMap contributors (ODbL)")} &middot; HackNation 2026
           </span>
           <Link
             href="/settings/accessibility"

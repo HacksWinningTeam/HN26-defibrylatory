@@ -30,7 +30,7 @@ Status lives in each task file's `Status` field; this table mirrors it.
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `T06` | Publish national AED dataset in the fork | Infra | No | `T04`, `T05` | 1.5 h | `VERIFIED` | [T06](tasks/T06-publish-to-fork.md) |
-| `T07` | AED map in Next.js — "Najbliższy AED" from BCTW Bydgoszcz (/) | Full-Stack | Yes | `T04` | 2 h | `DESIGN_READY` | [T07](tasks/T07-aed-map-nextjs.md) |
+| `T07` | AED map in Next.js — "Najbliższy AED" from BCTW Bydgoszcz (/) | Full-Stack | Yes | `T04` | 2 h | `VERIFIED` | [T07](tasks/T07-aed-map-nextjs.md) |
 
 ## Milestone 3 — Demo Polish & End-to-End Readiness
 

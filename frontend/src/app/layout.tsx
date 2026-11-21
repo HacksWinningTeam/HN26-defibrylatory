@@ -19,9 +19,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Django + DRF + Next.js Template",
+  title: "Misja AED – najbliższy defibrylator",
   description:
-    "Dockerized application template powered by Django, Django REST Framework, PostgreSQL, and Next.js.",
+    "Najbliższy defibrylator AED z ogólnopolskiego zbioru scalonego z danych dane.gov.pl i OpenStreetMap.",
 };
 
 export default function RootLayout({

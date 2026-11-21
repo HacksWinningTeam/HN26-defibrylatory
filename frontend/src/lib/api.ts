@@ -1,3 +1,5 @@
+import type { AedCollection } from "./aed";
+
 export interface HealthResponse {
   status: "ok" | "degraded";
   database: "ok" | "error";
@@ -72,5 +74,58 @@ export async function fetchHealth(): Promise<HealthCheckResult> {
       data: null,
       error: message,
     };
+  }
+}
+
+// --- T07: AED map ------------------------------------------------------------
+
+export interface SourceSummary {
+  id: string;
+  title: string;
+  kind: string; // "dane_gov_pl" | "osm"
+  url: string | null;
+  record_count: number;
+}
+
+export interface SourcesReport {
+  aed_count: number;
+  updated_at: string | null;
+  sources: SourceSummary[];
+}
+
+/** National AED set as GeoJSON (DEC-008); loaded once in the browser via the same-origin proxy. */
+export async function fetchAeds(signal?: AbortSignal): Promise<AedCollection> {
+  const response = await fetch(`${getApiBaseUrl()}/api/aed/`, {
+    headers: { Accept: "application/geo+json, application/json" },
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`Backend responded with HTTP ${response.status}.`);
+  }
+  return (await response.json()) as AedCollection;
+}
+
+/** Counts + harvested sources for the "Skąd są te dane?" section (server-side). `null` on error. */
+export async function fetchSources(): Promise<SourcesReport | null> {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/sources/`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as SourcesReport;
+    return {
+      aed_count: data.aed_count,
+      updated_at: data.updated_at,
+      sources: (data.sources ?? []).map((source) => ({
+        id: source.id,
+        title: source.title,
+        kind: source.kind,
+        url: source.url,
+        record_count: source.record_count,
+      })),
+    };
+  } catch {
+    return null;
   }
 }

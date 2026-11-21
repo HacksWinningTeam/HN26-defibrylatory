@@ -1,6 +1,6 @@
 # `T07` — AED map in Next.js (/mapa)
 
-- **Status:** `DESIGN_READY`
+- **Status:** `VERIFIED`
 - **Layer:** `Full-Stack`
 - **UI Design Required:** `Yes`
 - **Depends On:** `T04`
@@ -162,26 +162,36 @@ Anyone opens `/mapa` in our Next.js app and sees all merged AEDs in Poland on a 
 
 ## Acceptance Criteria
 
-- [ ] `/mapa` shows clustered markers for all merged AEDs; clicking shows details + source
-- [ ] List view + search work by keyboard; WCAG 2.2 AA checks pass
-- [ ] Works on mobile width (375 px) and desktop
-- [ ] `make build-prod` passes
+> Criteria below were written for design v1; design v2 (DEC-010) replaced search/list view with the nearest card + "Inne w pobliżu" list, and `/mapa` redirects to `/`.
+
+- [x] `/` shows clustered markers for all merged AEDs (18,769); clicking a marker shows details + source
+- [x] Nearest card + nearby list fully usable by keyboard (Prowadź, Pokaż na mapie → popup heading focused, Esc closes, focus restored); automated WCAG spot checks pass (targets ≥ 44 px, no horizontal scroll at 375 px, live region, labelled controls)
+- [x] Works on mobile width (375 px) and desktop (1440 px) — screenshots in `docs/demo/screenshots/T07-*.png`
+- [x] `make build-prod` passes
 
 ## Verification Checklist
 
 ### Automated Checks
-- [ ] `make test` passes (including new/updated unit & API tests for `T07`)
-- [ ] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
-- [ ] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
-- [ ] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
-- [ ] `make build-prod` passes
-  (required: frontend deps + code)
+- [x] `make test` passes — 83 backend tests (API contract of `/api/aed/` + `/api/sources/` already covered in T03/T04); frontend `npm test` 18 passed incl. 9 new `src/lib/aed.test.mjs` (location params, haversine, nearest, distance/walk format, 24/7, badges, OSM directions, title)
+- [x] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
+- [x] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
+- [x] `make migrations-check` passes — no model changes
+- [x] `make build-prod` passes (new deps `leaflet` 1.9.4, `leaflet.markercluster` 1.5.3, `@types/*`)
+
+### Observed Results (2026-11-21 23:14, headless Chrome against `make up-d`)
+- `/` → h1 "Najbliższy AED"; nearest AED **3,0 km** from BCTW ("AED – na korytarzu, blisko wyjścia", Dostęp ograniczony) so the "Daleko – dzwoń 112" warning shows (real data: no AED within 2 km of the venue in the merged set); #2–#5 at 3,5–4,2 km; live region "Najbliższy AED: 3,0 km, …"; map fits venue + 5 pins, ~29 clusters in view.
+- "Pokaż na mapie" on #2 → `aria-pressed=true`, pin 2 highlighted, popup "2. AED – portiernia" opens and its heading gets focus; close button labelled "Zamknij".
+- 375 px: no horizontal scroll; all interactive targets ≥ 44 px (Leaflet zoom 44 px). `/mapa` → 307 to `/`; `/?lat=52.2297&lon=21.0122&miejsce=Warszawa` → "Jesteś tutaj: Warszawa" (no demo label).
+- Implementation notes: plain Leaflet + `leaflet.markercluster` in a client-only component (no `react-leaflet`); clusters are white discs with a green ring so they cannot be confused with the solid numbered pins 1–5; badge priority puts "Może być niesprawny" first (safety) before lock/code → access → 24/7; `DANEGOV_FORK_URL` mirrored in `.env.example`, `compose.yaml`, `compose.prod.yaml` (link hidden when empty).
 
 ### Manual Verification
-1. Open `http://localhost:3000/mapa` → markers over Poland; zoom into Krosno → individual AEDs
-2. Tab through controls; open list view; search "Legionowo" → results
-3. Resize to 375 px → usable layout
+1. Open `http://localhost:3000/` → red 112 banner, "Jesteś tutaj: Bydgoskie Centrum Targowo-Wystawiennicze … (lokalizacja demonstracyjna)", NAJBLIŻSZY AED card with distance, badges, **PROWADŹ DO AED** (opens OSM walking route in a new tab)
+2. Map: "Jesteś tutaj" marker + numbered pins 1–5 + clusters; zoom out to see all of Poland, click a cluster → zooms in, click a single AED → popup with details + source link
+3. Keyboard only: Tab through the card and "Inne w pobliżu" → "Pokaż na mapie" on #3 → popup opens with focus on its heading; `Esc` closes it and focus returns to the button
+4. "Więcej informacji" expands details (hours, access, operator, sources, update date); switch language to English → all labels translated; try appearance "Wysoki kontrast"
+5. Resize to 375 px → single column, no horizontal scroll; `http://localhost:3000/mapa` redirects to `/`
+6. Optional: set `DANEGOV_FORK_URL=https://mcod.local/pl/dataset/4211,defibrylatory-aed-zbior-ogolnopolski` in `.env`, `docker compose up -d frontend` → "Zbiór w dane.gov.pl (fork)" link appears in "Skąd są te dane?"
 
 ### Sign-Off
-- **Verified By:** `—`
+- **Verified By:** User (marcin) on 2026-11-21 23:43
 - **Notes / Follow-Ups:** —
