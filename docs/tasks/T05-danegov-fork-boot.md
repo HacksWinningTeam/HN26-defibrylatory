@@ -1,6 +1,6 @@
 # `T05` — Run the dane.gov.pl fork locally (fork-config)
 
-- **Status:** `TODO`
+- **Status:** `VERIFIED`
 - **Layer:** `Infra`
 - **UI Design Required:** `No`
 - **Depends On:** None (start in parallel with T01 — slow image build)
@@ -33,20 +33,20 @@ N/A — backend/infra only.
 
 ## Acceptance Criteria
 
-- [ ] `https://admin.mcod.local` login works with fixture admin
-- [ ] `https://api.mcod.local/1.4/datasets` returns the fixture dataset
-- [ ] `https://mcod.local` shows the portal; dataset page opens
-- [ ] `https://aed.mcod.local/api/health/` (from fork network) reaches our backend
-- [ ] Our stack (`make up-d`) runs at the same time without port conflicts
+- [x] `https://admin.mcod.local` login works with fixture admin
+- [x] `https://api.mcod.local/1.4/datasets` returns the fixture dataset
+- [x] `https://mcod.local` shows the portal; dataset page opens
+- [x] `https://aed.mcod.local/api/health/` (from fork network) reaches our backend
+- [x] Our stack (`make up-d`) runs at the same time without port conflicts
 
 ## Verification Checklist
 
 ### Automated Checks
-- [ ] `make test` passes (including new/updated unit & API tests for `T05`)
-- [ ] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
-- [ ] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
-- [ ] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
-- [ ] `make build-prod` passes
+- [x] `make test` passes (including new/updated unit & API tests for `T05`)
+- [x] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
+- [x] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
+- [x] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
+- [~] `make build-prod` not run — no app code/compose changes in T05
 
 ### Manual Verification
 1. Follow `fork-config/README.md` from scratch; time it
@@ -54,5 +54,5 @@ N/A — backend/infra only.
 3. `docker compose -f ... exec mcod-local-celery curl -k https://aed.mcod.local/api/health/` → `{"status": "ok"...}`
 
 ### Sign-Off
-- **Verified By:** `—`
-- **Notes / Follow-Ups:** Go/no-go decision at ~2 h logged as DEC-XXX.
+- **Verified By:** User (marcin) on 2026-11-21 19:24
+- **Notes / Follow-Ups:** GO logged as DEC-006 (2026-11-21 19:12). Verified via `curl --resolve` + headless Chrome (hosts line not yet added). Known harmless issues: Celery RDF task errors (no rdfdb), empty CMS (blank footer/news), cert name mismatch for `aed.mcod.local` in browsers, admin media downloads may 502. Remaining manual step: user adds hosts line and opens URLs in browser.

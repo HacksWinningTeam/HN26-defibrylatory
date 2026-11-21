@@ -53,6 +53,20 @@
 - **Decision:** Fork stays a separate app with exactly one public port (fork nginx on `3080`, our app keeps `3000`), living outside the CI-synced dir (`/home/github/apps/danegov-fork/`), deployed manually from `fork-config/` (rsync code + config; images built locally and transferred with `docker save | ssh docker load` to avoid a 30+ min build on the server). Hostnames via wildcard DNS (`mcod.<ip>.sslip.io`, `api.…`, `admin.…`, `aed.…`) so judges need no `/etc/hosts`. Server check (2026-11-21 18:36): 15 GB RAM, 8 vCPU, 4 GB swap, `vm.max_map_count` OK, ufw inactive, access via `ssh hack` (root), GitHub self-hosted runner on the same host → no rescale; ES keeps default 1 GB heap. Server is shared: 3000 = `django-nextjs-template`, 3001 = `HN26-PCI`, so our app moves to `FRONTEND_PORT=3002` (server `.env`) and the fork uses `3080`. Local fork (T05/T06) first; server deploy is new task T10 in M3; fallback = local fork + screenshots.
 - **Affected Docs & Tasks:** `docs/01-brief.md`, `docs/03-architecture.md`, `docs/05-plan.md`, T05, new T10.
 
+### `DEC-006` — T05 Go: Local dane.gov.pl Fork Runs
+- **Date:** 2026-11-21 19:12
+- **Status:** Accepted
+- **Context / New Info:** Fork booted in ~75 min wall-clock (app image build 23.5 min). Verified: 11 containers up (compose project `danegov-fork`, network 172.28.18.0/24), `https://api.mcod.local/1.4/datasets` count=1, portal 200, admin login OK, `aed.mcod.local` proxy reaches our backend from `mcod-celery`. Deviations from plan: Angular runs as container `mcod-frontend` on the fork network (not on host); `mcod-cms` also runs (Angular calls `/cms`); `local.py` drops ES `"timeout": 1` (rejected by ES 6.8); base images pulled via `mirror.gcr.io` (Docker Hub 429).
+- **Decision:** GO — keep the real fork as the portal demo; the Next.js dataset-page fallback is not needed. Continue with T06 after T04.
+- **Affected Docs & Tasks:** `docs/03-architecture.md` (fork services), T05, T06, T10.
+
+### `DEC-007` — Schema v1.0.0 Extended for London-Schema Compatibility
+- **Date:** 2026-11-21 19:31
+- **Status:** Accepted
+- **Context / New Info:** User provided an AED JSON Schema based on the London dataset ("The Circuit", mentioned by a mentor) and asked whether `aed-pl` covers it. User wants to keep the Polish public-sector style (Polish ASCII snake_case names, flat table).
+- **Decision:** Added optional fields `numer_seryjny`, `data_instalacji`, `data_ostatniego_uzycia`, `data_waznosci_elektrod_pediatrycznych` and recommended `data_nastepnego_przegladu`; added `status` values `do_weryfikacji`, `skradziony`, `wycofany` (42 fields, 8 required). Not adopted: `what3words` (user decision), `accessCode` (security — open data; publish only `zabezpieczenie = szafka_na_kod`), `contactPerson` / `inspectorName` (personal data, RODO), nested `consumables[]` / `maintenanceLogs[]` (flattened to dates for tabular dane.gov.pl previews); serial number/manufacturer/model stay optional (no current dane.gov.pl source publishes them).
+- **Affected Docs & Tasks:** `backend/apps/aed/schema.py`, `docs/schema-aed.md`, `docs/deliverables/*`, T01.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`

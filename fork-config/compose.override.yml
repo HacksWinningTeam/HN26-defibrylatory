@@ -1,0 +1,170 @@
+# Override for the upstream dane.gov.pl compose stack (dane-gov-pl/backend_latest).
+# Used as:  docker compose -f docker-compose.local.yml -f <this file> <cmd> <services...>
+# (see fork-config/fork-compose.sh — always pass explicit service names).
+#
+# What it changes vs upstream:
+#  - project name "danegov-fork" (volumes: danegov-fork_postgres_vol_17, ...)
+#  - fork network moved 172.18.18.0/24 -> 172.28.18.0/24 (172.18.0.0/16 is taken by
+#    another local docker network); every fixed IP keeps its last octet
+#  - host ports: only nginx 80/443 and mailhog UI 8025 are published (our own
+#    stack uses 3000/8000/5432)
+#  - app services no longer depend on mcod-rdfdb (USE_RDF_DB=False) / discourse
+#  - nginx gets the aed.mcod.local alias (our backend proxy, see nginx/07-aed.conf.template)
+#  - extra service mcod-frontend: Angular `ng serve -c local` inside the fork network,
+#    so api.mcod.local resolves to nginx without touching the host /etc/hosts
+name: danegov-fork
+
+services:
+  mcod-db:
+    ports: !reset []
+    networks:
+      backend:
+        ipv4_address: 172.28.18.18
+
+  mcod-rabbitmq:
+    ports: !reset []
+    networks:
+      backend:
+        ipv4_address: 172.28.18.19
+
+  mcod-redis:
+    ports: !reset []
+    networks:
+      backend:
+        ipv4_address: 172.28.18.20
+
+  mcod-elasticsearch:
+    ports: !reset []
+    networks:
+      backend:
+        ipv4_address: 172.28.18.21
+
+  mcod-smtp:
+    ports: !override
+      - "127.0.0.1:8025:8025"
+    networks:
+      backend:
+        ipv4_address: 172.28.18.22
+
+  mcod-nginx:
+    ports: !override
+      - "80:80"
+      - "443:443"
+    networks:
+      backend:
+        ipv4_address: 172.28.18.100
+        aliases:
+          - mcod.local
+          - admin.mcod.local
+          - api.mcod.local
+          - cms.mcod.local
+          - forum.mcod.local
+          - mail.mcod.local
+          - aed.mcod.local
+    extra_hosts: !override
+      - "host.docker.internal:host-gateway"
+
+  mcod-local-admin:
+    image: mcod-app:local
+    depends_on: !override
+      - mcod-db
+      - mcod-rabbitmq
+      - mcod-redis
+      - mcod-elasticsearch
+      - mcod-smtp
+      - mcod-nginx
+    networks:
+      backend:
+        ipv4_address: 172.28.18.101
+
+  mcod-local-api:
+    image: mcod-app:local
+    depends_on: !override
+      - mcod-db
+      - mcod-rabbitmq
+      - mcod-redis
+      - mcod-elasticsearch
+      - mcod-smtp
+      - mcod-nginx
+    networks:
+      backend:
+        ipv4_address: 172.28.18.102
+
+  mcod-local-cms:
+    image: mcod-app:local
+    depends_on: !override
+      - mcod-db
+      - mcod-rabbitmq
+      - mcod-redis
+      - mcod-elasticsearch
+      - mcod-smtp
+      - mcod-nginx
+    networks:
+      backend:
+        ipv4_address: 172.28.18.103
+
+  mcod-local-celery:
+    image: mcod-app:local
+    depends_on: !override
+      - mcod-db
+      - mcod-rabbitmq
+      - mcod-redis
+      - mcod-elasticsearch
+      - mcod-smtp
+      - mcod-nginx
+    networks:
+      backend:
+        ipv4_address: 172.28.18.110
+
+  mcod-local-run:
+    # upstream builds docker/tests/Dockerfile; the plain app image is enough for manage.py
+    image: mcod-app:local
+    build: !reset null
+    depends_on: !override []
+
+  mcod-frontend:
+    container_name: mcod-frontend
+    image: node:22-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ../frontend_latest:/app:ro
+      - frontend_node_modules:/app/node_modules
+      - frontend_angular_cache:/app/.angular
+    environment:
+      NG_CLI_ANALYTICS: "false"
+      NODE_OPTIONS: "--max-old-space-size=4096"
+    command:
+      - sh
+      - -c
+      - >-
+        ( [ -f node_modules/.fork-installed ] && cmp -s package-lock.json node_modules/.fork-installed )
+        || ( npm ci --no-audit --no-fund && cp package-lock.json node_modules/.fork-installed );
+        exec npx ng serve -c local --proxy-config proxy.local.conf.json --host 0.0.0.0 --port 4200
+    networks:
+      backend:
+        ipv4_address: 172.28.18.120
+    profiles: []
+
+  # Not used by our fork: disabled so that even a bare `up`/`build` never starts them
+  # (discourse = private registry.dane.gov.pl image; rdfdb: USE_RDF_DB=False).
+  mcod-discourse:
+    profiles: !override [disabled]
+  mcod-discourse-sidekiq:
+    profiles: !override [disabled]
+  mcod-flower:
+    profiles: !override [disabled]
+  mcod-rdfdb:
+    profiles: !override [disabled]
+  mcod-local-ws:
+    profiles: !override [disabled]
+
+networks:
+  backend:
+    ipam: !override
+      driver: default
+      config:
+        - subnet: 172.28.18.0/24
+
+volumes:
+  frontend_node_modules:
+  frontend_angular_cache:

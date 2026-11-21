@@ -1,6 +1,6 @@
 # `T01` — Standard AED schema (wzorcowy zakres danych) + downloads
 
-- **Status:** `TODO`
+- **Status:** `VERIFIED`
 - **Layer:** `Backend`
 - **UI Design Required:** `No`
 - **Depends On:** None
@@ -38,19 +38,19 @@ N/A — backend/infra only.
 
 ## Acceptance Criteria
 
-- [ ] `GET /api/schema-standard/` returns the ordered field list with PL/EN descriptions
-- [ ] All 4 downloads return correct `Content-Type` and `Content-Disposition`
-- [ ] `make export-schema`-equivalent command writes files to `docs/deliverables/` (xlsx = submission deliverable)
-- [ ] `docs/schema-aed.md` explains each field group and maps source columns → standard fields
+- [x] `GET /api/schema-standard/` returns the ordered field list with PL/EN descriptions
+- [x] All 4 downloads return correct `Content-Type` and `Content-Disposition`
+- [x] `make export-schema`-equivalent command writes files to `docs/deliverables/` (xlsx = submission deliverable)
+- [x] `docs/schema-aed.md` explains each field group and maps source columns → standard fields
 
 ## Verification Checklist
 
 ### Automated Checks
-- [ ] `make test` passes (including new/updated unit & API tests for `T01`)
-- [ ] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
-- [ ] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
-- [ ] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
-- [ ] `make build-prod` passes
+- [x] `make test` passes (including new/updated unit & API tests for `T01`)
+- [x] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
+- [x] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
+- [x] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
+- [~] `make build-prod`: backend prod image built OK; frontend prod image **not run** (no frontend changes; Docker Hub anonymous pull limit 429 hit during T05 builds) — run at M1 end
   (required: new dependency)
 
 ### Manual Verification
@@ -59,5 +59,5 @@ N/A — backend/infra only.
 3. Review the field list in `docs/schema-aed.md` with the user (schema is the key deliverable)
 
 ### Sign-Off
-- **Verified By:** `—`
-- **Notes / Follow-Ups:** —
+- **Verified By:** User (marcin) on 2026-11-21 19:33
+- **Notes / Follow-Ups:** Observed 2026-11-21 18:47: 27 tests passed (16 new in `apps/aed/tests/test_schema.py`), ruff OK, OpenAPI valid, no migrations. Schema v1.0.0 = 37 fields, 8 required; extended per DEC-007 (19:31) to 42 fields, 8 required — 28 tests pass, all checks green, deliverables re-exported. Deliverables in `docs/deliverables/`. Base image `python:3.12-slim` was re-tagged from `mirror.gcr.io` because of Docker Hub rate limiting (no Dockerfile change).

@@ -1,0 +1,27 @@
+# fork-config/nginx/07-aed.conf.template
+# Copied by setup.sh to dane-gov-pl/backend_latest/docker/nginx/config-templates/.
+# https://aed.mcod.local -> our hackathon Django backend on the docker host (port 8000).
+# The fork only accepts https resource links and downloads them with verify=False,
+# so the existing self-signed mcod.local certificate is good enough here.
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  server_name aed.mcod.local;
+  charset utf-8;
+  client_max_body_size 100M;
+  access_log /var/log/nginx/access.log;
+  error_log /var/log/nginx/error.log;
+  ssl_certificate ${MCOD_CERTS_PATH}/mcod.local.crt;
+  ssl_certificate_key ${MCOD_CERTS_PATH}/mcod.local.key;
+
+  location / {
+    proxy_pass http://host.docker.internal:8000;
+    # Our Django only allows localhost/127.0.0.1/backend in DJANGO_ALLOWED_HOSTS.
+    proxy_set_header Host localhost;
+    proxy_set_header X-Forwarded-Host aed.mcod.local;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_read_timeout 120s;
+  }
+}

@@ -1,0 +1,502 @@
+{
+  "fields": [
+    {
+      "name": "id_aed",
+      "title": "Identyfikator AED",
+      "description": "Unikalny i niezmienny identyfikator urządzenia w zbiorze dysponenta danych (nie zmienia się przy aktualizacji zbioru).",
+      "type": "string",
+      "constraints": {
+        "required": true,
+        "pattern": "^[A-Za-z0-9._\\-]+$",
+        "maxLength": 64
+      }
+    },
+    {
+      "name": "nazwa",
+      "title": "Nazwa miejsca",
+      "description": "Nazwa obiektu lub miejsca, w którym znajduje się AED.",
+      "type": "string",
+      "constraints": {
+        "required": true,
+        "maxLength": 255
+      }
+    },
+    {
+      "name": "szerokosc_geograficzna",
+      "title": "Szerokość geograficzna",
+      "description": "Szerokość geograficzna AED w układzie WGS84 (EPSG:4326), stopnie dziesiętne, min. 5 miejsc po przecinku. Dla Polski ok. 49,0-54,9.",
+      "type": "number",
+      "constraints": {
+        "required": true,
+        "minimum": 49.0,
+        "maximum": 54.9
+      }
+    },
+    {
+      "name": "dlugosc_geograficzna",
+      "title": "Długość geograficzna",
+      "description": "Długość geograficzna AED w układzie WGS84 (EPSG:4326), stopnie dziesiętne, min. 5 miejsc po przecinku. Dla Polski ok. 14,1-24,2.",
+      "type": "number",
+      "constraints": {
+        "required": true,
+        "minimum": 14.1,
+        "maximum": 24.2
+      }
+    },
+    {
+      "name": "opis_lokalizacji",
+      "title": "Opis lokalizacji w obiekcie",
+      "description": "Gdzie dokładnie w obiekcie znajduje się AED - tak, by znalazła go osoba pierwszy raz w budynku.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 500
+      }
+    },
+    {
+      "name": "w_budynku",
+      "title": "Wewnątrz budynku",
+      "description": "Czy AED znajduje się wewnątrz budynku (true) czy na zewnątrz (false).",
+      "type": "boolean",
+      "trueValues": [
+        "true"
+      ],
+      "falseValues": [
+        "false"
+      ],
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "pietro",
+      "title": "Kondygnacja",
+      "description": "Numer kondygnacji: 0 = parter, liczby ujemne = piętra podziemne.",
+      "type": "integer",
+      "constraints": {
+        "required": false,
+        "minimum": -10,
+        "maximum": 200
+      }
+    },
+    {
+      "name": "wojewodztwo",
+      "title": "Województwo",
+      "description": "Nazwa województwa (małymi literami, jak w TERYT).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "enum": [
+          "dolnośląskie",
+          "kujawsko-pomorskie",
+          "lubelskie",
+          "lubuskie",
+          "łódzkie",
+          "małopolskie",
+          "mazowieckie",
+          "opolskie",
+          "podkarpackie",
+          "podlaskie",
+          "pomorskie",
+          "śląskie",
+          "świętokrzyskie",
+          "warmińsko-mazurskie",
+          "wielkopolskie",
+          "zachodniopomorskie"
+        ]
+      }
+    },
+    {
+      "name": "powiat",
+      "title": "Powiat",
+      "description": "Nazwa powiatu.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 100
+      }
+    },
+    {
+      "name": "gmina",
+      "title": "Gmina",
+      "description": "Nazwa gminy.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 100
+      }
+    },
+    {
+      "name": "miejscowosc",
+      "title": "Miejscowość",
+      "description": "Nazwa miejscowości.",
+      "type": "string",
+      "constraints": {
+        "required": true,
+        "maxLength": 100
+      }
+    },
+    {
+      "name": "kod_terc",
+      "title": "Kod TERC gminy",
+      "description": "7-cyfrowy identyfikator gminy z rejestru TERYT (TERC), np. 1408011.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "pattern": "^\\d{7}$"
+      }
+    },
+    {
+      "name": "kod_simc",
+      "title": "Kod SIMC miejscowości",
+      "description": "7-cyfrowy identyfikator miejscowości z rejestru TERYT (SIMC).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "pattern": "^\\d{7}$"
+      }
+    },
+    {
+      "name": "cecha_ulicy",
+      "title": "Cecha ulicy",
+      "description": "Rodzaj ulicy zgodnie z TERYT (ul., al., pl., ...).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "enum": [
+          "ul.",
+          "al.",
+          "pl.",
+          "os.",
+          "rondo",
+          "skwer",
+          "rynek",
+          "bulw.",
+          "wyb.",
+          "droga",
+          "park",
+          "inne"
+        ]
+      }
+    },
+    {
+      "name": "nazwa_ulicy",
+      "title": "Nazwa ulicy",
+      "description": "Nazwa ulicy bez cechy.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 150
+      }
+    },
+    {
+      "name": "nr_budynku",
+      "title": "Numer budynku",
+      "description": "Numer porządkowy budynku.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 20
+      }
+    },
+    {
+      "name": "nr_lokalu",
+      "title": "Numer lokalu",
+      "description": "Numer lokalu (jeśli dotyczy).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 20
+      }
+    },
+    {
+      "name": "kod_pocztowy",
+      "title": "Kod pocztowy",
+      "description": "Kod pocztowy w formacie NN-NNN.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "pattern": "^\\d{2}-\\d{3}$"
+      }
+    },
+    {
+      "name": "dostep",
+      "title": "Rodzaj dostępu",
+      "description": "Kto może skorzystać z AED. Gdy brak informacji: nieznany.",
+      "type": "string",
+      "constraints": {
+        "required": true,
+        "enum": [
+          "publiczny",
+          "ograniczony",
+          "prywatny",
+          "nieznany"
+        ]
+      }
+    },
+    {
+      "name": "godziny_dostepnosci",
+      "title": "Godziny dostępności",
+      "description": "Kiedy AED jest dostępny, w składni opening_hours (OpenStreetMap), np. 24/7 lub Mo-Fr 07:30-15:30.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 255
+      }
+    },
+    {
+      "name": "zabezpieczenie",
+      "title": "Zabezpieczenie urządzenia",
+      "description": "Czy AED jest w szafce i czy jest zamknięty - kluczowe, by nie tracić czasu na urządzenie zamknięte na klucz.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "enum": [
+          "brak",
+          "szafka_otwarta",
+          "szafka_z_alarmem",
+          "szafka_na_kod",
+          "zamkniety_na_klucz",
+          "nieznany"
+        ]
+      }
+    },
+    {
+      "name": "instrukcja_dojscia",
+      "title": "Instrukcja dostępu",
+      "description": "Dodatkowe informacje, jak uzyskać dostęp (np. klucz u ochrony, zadzwoń domofonem).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 500
+      }
+    },
+    {
+      "name": "status",
+      "title": "Status urządzenia",
+      "description": "Aktualny stan urządzenia.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "enum": [
+          "sprawny",
+          "niesprawny",
+          "w_serwisie",
+          "do_weryfikacji",
+          "skradziony",
+          "wycofany",
+          "nieznany"
+        ]
+      }
+    },
+    {
+      "name": "data_ostatniego_uzycia",
+      "title": "Data ostatniego użycia",
+      "description": "Data ostatniego użycia lub zadysponowania urządzenia (YYYY-MM-DD); po użyciu status powinien mieć wartość do_weryfikacji do czasu sprawdzenia.",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "producent",
+      "title": "Producent",
+      "description": "Producent urządzenia.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 100
+      }
+    },
+    {
+      "name": "model",
+      "title": "Model",
+      "description": "Model urządzenia.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 100
+      }
+    },
+    {
+      "name": "numer_seryjny",
+      "title": "Numer seryjny",
+      "description": "Numer seryjny urządzenia nadany przez producenta.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 100
+      }
+    },
+    {
+      "name": "data_instalacji",
+      "title": "Data instalacji",
+      "description": "Data instalacji urządzenia w tej lokalizacji (YYYY-MM-DD).",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "elektrody_pediatryczne",
+      "title": "Elektrody pediatryczne",
+      "description": "Czy przy urządzeniu są elektrody/klucz pediatryczny (dla dzieci).",
+      "type": "boolean",
+      "trueValues": [
+        "true"
+      ],
+      "falseValues": [
+        "false"
+      ],
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "data_ostatniego_przegladu",
+      "title": "Data ostatniego przeglądu",
+      "description": "Data ostatniego przeglądu technicznego (YYYY-MM-DD).",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "data_nastepnego_przegladu",
+      "title": "Data następnego przeglądu",
+      "description": "Planowana data kolejnego przeglądu technicznego (YYYY-MM-DD).",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "data_waznosci_elektrod",
+      "title": "Data ważności elektrod",
+      "description": "Data ważności elektrod (YYYY-MM-DD).",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "data_waznosci_elektrod_pediatrycznych",
+      "title": "Data ważności elektrod pediatrycznych",
+      "description": "Data ważności elektrod pediatrycznych (YYYY-MM-DD), jeśli są na wyposażeniu.",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "data_waznosci_baterii",
+      "title": "Data ważności baterii",
+      "description": "Data ważności baterii (YYYY-MM-DD).",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "dysponent",
+      "title": "Dysponent urządzenia",
+      "description": "Instytucja lub firma odpowiedzialna za urządzenie (właściciel/zarządca).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 255
+      }
+    },
+    {
+      "name": "telefon_kontaktowy",
+      "title": "Telefon kontaktowy",
+      "description": "Telefon do dysponenta/obsługi obiektu w formacie międzynarodowym.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "pattern": "^\\+?[0-9 ()\\-]{7,30}$",
+        "maxLength": 30
+      }
+    },
+    {
+      "name": "email_kontaktowy",
+      "title": "E-mail kontaktowy",
+      "description": "Adres e-mail do dysponenta.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+        "maxLength": 254
+      }
+    },
+    {
+      "name": "data_aktualizacji",
+      "title": "Data aktualizacji",
+      "description": "Data ostatniej aktualizacji lub weryfikacji danych tego rekordu (YYYY-MM-DD).",
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "constraints": {
+        "required": true
+      }
+    },
+    {
+      "name": "zweryfikowany",
+      "title": "Zweryfikowany na miejscu",
+      "description": "Czy obecność i dostępność AED potwierdzono na miejscu.",
+      "type": "boolean",
+      "trueValues": [
+        "true"
+      ],
+      "falseValues": [
+        "false"
+      ],
+      "constraints": {
+        "required": false
+      }
+    },
+    {
+      "name": "zrodlo",
+      "title": "Źródło danych",
+      "description": "Nazwa dysponenta danych / źródła, z którego pochodzi rekord.",
+      "type": "string",
+      "constraints": {
+        "required": true,
+        "maxLength": 255
+      }
+    },
+    {
+      "name": "zrodlo_url",
+      "title": "Adres źródła",
+      "description": "Adres URL zbioru lub zasobu źródłowego (np. w dane.gov.pl).",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "pattern": "^https?://",
+        "maxLength": 500
+      }
+    },
+    {
+      "name": "uwagi",
+      "title": "Uwagi",
+      "description": "Dodatkowe uwagi.",
+      "type": "string",
+      "constraints": {
+        "required": false,
+        "maxLength": 1000
+      }
+    }
+  ],
+  "primaryKey": [
+    "id_aed"
+  ],
+  "missingValues": [
+    ""
+  ]
+}

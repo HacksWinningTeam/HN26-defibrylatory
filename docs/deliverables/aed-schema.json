@@ -1,0 +1,783 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dane.gov.pl/schemas/aed-pl/1.0.0/aed.schema.json",
+  "title": "Wzorcowy zakres danych o defibrylatorach AED",
+  "description": "Jednolity zakres danych o automatycznych defibrylatorach zewnętrznych (AED) do udostępniania w portalu dane.gov.pl przez wszystkich dysponentów danych. Jeden wiersz = jedno urządzenie AED.",
+  "type": "object",
+  "required": [
+    "id_aed",
+    "nazwa",
+    "szerokosc_geograficzna",
+    "dlugosc_geograficzna",
+    "miejscowosc",
+    "dostep",
+    "data_aktualizacji",
+    "zrodlo"
+  ],
+  "properties": {
+    "id_aed": {
+      "title": "Identyfikator AED",
+      "description": "Unikalny i niezmienny identyfikator urządzenia w zbiorze dysponenta danych (nie zmienia się przy aktualizacji zbioru).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._\\-]+$",
+      "maxLength": 64,
+      "examples": [
+        "LEGIONOWO-AED-001"
+      ]
+    },
+    "nazwa": {
+      "title": "Nazwa miejsca",
+      "description": "Nazwa obiektu lub miejsca, w którym znajduje się AED.",
+      "type": "string",
+      "maxLength": 255,
+      "examples": [
+        "Urząd Miasta Legionowo"
+      ]
+    },
+    "szerokosc_geograficzna": {
+      "title": "Szerokość geograficzna",
+      "description": "Szerokość geograficzna AED w układzie WGS84 (EPSG:4326), stopnie dziesiętne, min. 5 miejsc po przecinku. Dla Polski ok. 49,0-54,9.",
+      "type": "number",
+      "minimum": 49.0,
+      "maximum": 54.9,
+      "examples": [
+        52.395198
+      ]
+    },
+    "dlugosc_geograficzna": {
+      "title": "Długość geograficzna",
+      "description": "Długość geograficzna AED w układzie WGS84 (EPSG:4326), stopnie dziesiętne, min. 5 miejsc po przecinku. Dla Polski ok. 14,1-24,2.",
+      "type": "number",
+      "minimum": 14.1,
+      "maximum": 24.2,
+      "examples": [
+        20.931382
+      ]
+    },
+    "opis_lokalizacji": {
+      "anyOf": [
+        {
+          "title": "Opis lokalizacji w obiekcie",
+          "description": "Gdzie dokładnie w obiekcie znajduje się AED - tak, by znalazła go osoba pierwszy raz w budynku.",
+          "type": "string",
+          "maxLength": 500,
+          "examples": [
+            "Parter, hol główny, na ścianie obok portierni"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "w_budynku": {
+      "anyOf": [
+        {
+          "title": "Wewnątrz budynku",
+          "description": "Czy AED znajduje się wewnątrz budynku (true) czy na zewnątrz (false).",
+          "type": "boolean",
+          "examples": [
+            true
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "pietro": {
+      "anyOf": [
+        {
+          "title": "Kondygnacja",
+          "description": "Numer kondygnacji: 0 = parter, liczby ujemne = piętra podziemne.",
+          "type": "integer",
+          "minimum": -10,
+          "maximum": 200,
+          "examples": [
+            0
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "wojewodztwo": {
+      "anyOf": [
+        {
+          "title": "Województwo",
+          "description": "Nazwa województwa (małymi literami, jak w TERYT).",
+          "type": "string",
+          "enum": [
+            "dolnośląskie",
+            "kujawsko-pomorskie",
+            "lubelskie",
+            "lubuskie",
+            "łódzkie",
+            "małopolskie",
+            "mazowieckie",
+            "opolskie",
+            "podkarpackie",
+            "podlaskie",
+            "pomorskie",
+            "śląskie",
+            "świętokrzyskie",
+            "warmińsko-mazurskie",
+            "wielkopolskie",
+            "zachodniopomorskie"
+          ],
+          "examples": [
+            "mazowieckie"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "powiat": {
+      "anyOf": [
+        {
+          "title": "Powiat",
+          "description": "Nazwa powiatu.",
+          "type": "string",
+          "maxLength": 100,
+          "examples": [
+            "legionowski"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "gmina": {
+      "anyOf": [
+        {
+          "title": "Gmina",
+          "description": "Nazwa gminy.",
+          "type": "string",
+          "maxLength": 100,
+          "examples": [
+            "Legionowo"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "miejscowosc": {
+      "title": "Miejscowość",
+      "description": "Nazwa miejscowości.",
+      "type": "string",
+      "maxLength": 100,
+      "examples": [
+        "Legionowo"
+      ]
+    },
+    "kod_terc": {
+      "anyOf": [
+        {
+          "title": "Kod TERC gminy",
+          "description": "7-cyfrowy identyfikator gminy z rejestru TERYT (TERC), np. 1408011.",
+          "type": "string",
+          "pattern": "^\\d{7}$",
+          "examples": [
+            "1408011"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "kod_simc": {
+      "anyOf": [
+        {
+          "title": "Kod SIMC miejscowości",
+          "description": "7-cyfrowy identyfikator miejscowości z rejestru TERYT (SIMC).",
+          "type": "string",
+          "pattern": "^\\d{7}$",
+          "examples": [
+            "0920806"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "cecha_ulicy": {
+      "anyOf": [
+        {
+          "title": "Cecha ulicy",
+          "description": "Rodzaj ulicy zgodnie z TERYT (ul., al., pl., ...).",
+          "type": "string",
+          "enum": [
+            "ul.",
+            "al.",
+            "pl.",
+            "os.",
+            "rondo",
+            "skwer",
+            "rynek",
+            "bulw.",
+            "wyb.",
+            "droga",
+            "park",
+            "inne"
+          ],
+          "examples": [
+            "ul."
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "nazwa_ulicy": {
+      "anyOf": [
+        {
+          "title": "Nazwa ulicy",
+          "description": "Nazwa ulicy bez cechy.",
+          "type": "string",
+          "maxLength": 150,
+          "examples": [
+            "Piłsudskiego"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "nr_budynku": {
+      "anyOf": [
+        {
+          "title": "Numer budynku",
+          "description": "Numer porządkowy budynku.",
+          "type": "string",
+          "maxLength": 20,
+          "examples": [
+            "41"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "nr_lokalu": {
+      "anyOf": [
+        {
+          "title": "Numer lokalu",
+          "description": "Numer lokalu (jeśli dotyczy).",
+          "type": "string",
+          "maxLength": 20
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "kod_pocztowy": {
+      "anyOf": [
+        {
+          "title": "Kod pocztowy",
+          "description": "Kod pocztowy w formacie NN-NNN.",
+          "type": "string",
+          "pattern": "^\\d{2}-\\d{3}$",
+          "examples": [
+            "05-120"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "dostep": {
+      "title": "Rodzaj dostępu",
+      "description": "Kto może skorzystać z AED. Gdy brak informacji: nieznany.",
+      "type": "string",
+      "enum": [
+        "publiczny",
+        "ograniczony",
+        "prywatny",
+        "nieznany"
+      ],
+      "examples": [
+        "publiczny"
+      ]
+    },
+    "godziny_dostepnosci": {
+      "anyOf": [
+        {
+          "title": "Godziny dostępności",
+          "description": "Kiedy AED jest dostępny, w składni opening_hours (OpenStreetMap), np. 24/7 lub Mo-Fr 07:30-15:30.",
+          "type": "string",
+          "maxLength": 255,
+          "examples": [
+            "Mo-Fr 07:30-17:00"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "zabezpieczenie": {
+      "anyOf": [
+        {
+          "title": "Zabezpieczenie urządzenia",
+          "description": "Czy AED jest w szafce i czy jest zamknięty - kluczowe, by nie tracić czasu na urządzenie zamknięte na klucz.",
+          "type": "string",
+          "enum": [
+            "brak",
+            "szafka_otwarta",
+            "szafka_z_alarmem",
+            "szafka_na_kod",
+            "zamkniety_na_klucz",
+            "nieznany"
+          ],
+          "examples": [
+            "szafka_z_alarmem"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "instrukcja_dojscia": {
+      "anyOf": [
+        {
+          "title": "Instrukcja dostępu",
+          "description": "Dodatkowe informacje, jak uzyskać dostęp (np. klucz u ochrony, zadzwoń domofonem).",
+          "type": "string",
+          "maxLength": 500,
+          "examples": [
+            "Poza godzinami pracy klucz u ochrony, wejście od ul. Piłsudskiego"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "title": "Status urządzenia",
+          "description": "Aktualny stan urządzenia.",
+          "type": "string",
+          "enum": [
+            "sprawny",
+            "niesprawny",
+            "w_serwisie",
+            "do_weryfikacji",
+            "skradziony",
+            "wycofany",
+            "nieznany"
+          ],
+          "examples": [
+            "sprawny"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_ostatniego_uzycia": {
+      "anyOf": [
+        {
+          "title": "Data ostatniego użycia",
+          "description": "Data ostatniego użycia lub zadysponowania urządzenia (YYYY-MM-DD); po użyciu status powinien mieć wartość do_weryfikacji do czasu sprawdzenia.",
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "producent": {
+      "anyOf": [
+        {
+          "title": "Producent",
+          "description": "Producent urządzenia.",
+          "type": "string",
+          "maxLength": 100,
+          "examples": [
+            "Philips"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "model": {
+      "anyOf": [
+        {
+          "title": "Model",
+          "description": "Model urządzenia.",
+          "type": "string",
+          "maxLength": 100,
+          "examples": [
+            "HeartStart FRx"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "numer_seryjny": {
+      "anyOf": [
+        {
+          "title": "Numer seryjny",
+          "description": "Numer seryjny urządzenia nadany przez producenta.",
+          "type": "string",
+          "maxLength": 100,
+          "examples": [
+            "B21K-00123"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_instalacji": {
+      "anyOf": [
+        {
+          "title": "Data instalacji",
+          "description": "Data instalacji urządzenia w tej lokalizacji (YYYY-MM-DD).",
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2021-09-01"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "elektrody_pediatryczne": {
+      "anyOf": [
+        {
+          "title": "Elektrody pediatryczne",
+          "description": "Czy przy urządzeniu są elektrody/klucz pediatryczny (dla dzieci).",
+          "type": "boolean",
+          "examples": [
+            true
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_ostatniego_przegladu": {
+      "anyOf": [
+        {
+          "title": "Data ostatniego przeglądu",
+          "description": "Data ostatniego przeglądu technicznego (YYYY-MM-DD).",
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2026-05-12"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_nastepnego_przegladu": {
+      "anyOf": [
+        {
+          "title": "Data następnego przeglądu",
+          "description": "Planowana data kolejnego przeglądu technicznego (YYYY-MM-DD).",
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2027-05-12"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_waznosci_elektrod": {
+      "anyOf": [
+        {
+          "title": "Data ważności elektrod",
+          "description": "Data ważności elektrod (YYYY-MM-DD).",
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2028-03-31"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_waznosci_elektrod_pediatrycznych": {
+      "anyOf": [
+        {
+          "title": "Data ważności elektrod pediatrycznych",
+          "description": "Data ważności elektrod pediatrycznych (YYYY-MM-DD), jeśli są na wyposażeniu.",
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2028-06-30"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_waznosci_baterii": {
+      "anyOf": [
+        {
+          "title": "Data ważności baterii",
+          "description": "Data ważności baterii (YYYY-MM-DD).",
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2029-01-31"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "dysponent": {
+      "anyOf": [
+        {
+          "title": "Dysponent urządzenia",
+          "description": "Instytucja lub firma odpowiedzialna za urządzenie (właściciel/zarządca).",
+          "type": "string",
+          "maxLength": 255,
+          "examples": [
+            "Urząd Miasta Legionowo"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "telefon_kontaktowy": {
+      "anyOf": [
+        {
+          "title": "Telefon kontaktowy",
+          "description": "Telefon do dysponenta/obsługi obiektu w formacie międzynarodowym.",
+          "type": "string",
+          "pattern": "^\\+?[0-9 ()\\-]{7,30}$",
+          "maxLength": 30,
+          "examples": [
+            "+48 22 766 40 00"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "email_kontaktowy": {
+      "anyOf": [
+        {
+          "title": "E-mail kontaktowy",
+          "description": "Adres e-mail do dysponenta.",
+          "type": "string",
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "maxLength": 254,
+          "examples": [
+            "aed@example.gov.pl"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "data_aktualizacji": {
+      "title": "Data aktualizacji",
+      "description": "Data ostatniej aktualizacji lub weryfikacji danych tego rekordu (YYYY-MM-DD).",
+      "type": "string",
+      "format": "date",
+      "examples": [
+        "2026-11-21"
+      ]
+    },
+    "zweryfikowany": {
+      "anyOf": [
+        {
+          "title": "Zweryfikowany na miejscu",
+          "description": "Czy obecność i dostępność AED potwierdzono na miejscu.",
+          "type": "boolean",
+          "examples": [
+            true
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "zrodlo": {
+      "title": "Źródło danych",
+      "description": "Nazwa dysponenta danych / źródła, z którego pochodzi rekord.",
+      "type": "string",
+      "maxLength": 255,
+      "examples": [
+        "Gmina Miejska Legionowo"
+      ]
+    },
+    "zrodlo_url": {
+      "anyOf": [
+        {
+          "title": "Adres źródła",
+          "description": "Adres URL zbioru lub zasobu źródłowego (np. w dane.gov.pl).",
+          "type": "string",
+          "pattern": "^https?://",
+          "maxLength": 500,
+          "examples": [
+            "https://dane.gov.pl/pl/dataset/40593"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "uwagi": {
+      "anyOf": [
+        {
+          "title": "Uwagi",
+          "description": "Dodatkowe uwagi.",
+          "type": "string",
+          "maxLength": 1000
+        },
+        {
+          "type": "null"
+        },
+        {
+          "const": ""
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}
