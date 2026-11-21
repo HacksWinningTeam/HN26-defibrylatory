@@ -1,17 +1,150 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light dark;
+  --color-canvas: light-dark(#f8fafc, #0f172a);
+  --color-surface: light-dark(#ffffff, #1e293b);
+  --color-surface-raised: light-dark(#f1f5f9, #334155);
+  --color-text: light-dark(#0f172a, #f8fafc);
+  --color-text-muted: light-dark(#334155, #cbd5e1);
+  --color-border: light-dark(#94a3b8, #475569);
+  --color-border-subtle: light-dark(#cbd5e1, #334155);
+  --color-accent: light-dark(#1d4ed8, #3b82f6);
+  --color-accent-hover: light-dark(#1e40af, #60a5fa);
+  --color-accent-text: light-dark(#1e40af, #93c5fd);
+  --color-on-accent: light-dark(#ffffff, #0f172a);
+  --color-focus: light-dark(#1d4ed8, #93c5fd);
+  --color-success-bg: light-dark(#ecfdf5, #064e3b);
+  --color-success-border: light-dark(#047857, #34d399);
+  --color-success-text: light-dark(#022c22, #ecfdf5);
+  --color-success-badge: light-dark(#065f46, #10b981);
+  --color-success-on-badge: light-dark(#ffffff, #022c22);
+  --color-error-bg: light-dark(#fef2f2, #7f1d1d);
+  --color-error-border: light-dark(#b91c1c, #f87171);
+  --color-error-text: light-dark(#450a0a, #fef2f2);
+  --color-error-badge: light-dark(#991b1b, #ef4444);
+  --color-error-on-badge: light-dark(#ffffff, #450a0a);
+}
+
+:root[data-appearance="light"] {
   color-scheme: light;
 }
 
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-appearance="hc-black-white"] {
+  color-scheme: dark;
+  --color-canvas: #000000;
+  --color-surface: #000000;
+  --color-surface-raised: #111111;
+  --color-text: #ffffff;
+  --color-text-muted: #f4f4f5;
+  --color-border: #ffffff;
+  --color-border-subtle: #d4d4d8;
+  --color-accent: #ffffff;
+  --color-accent-hover: #e4e4e7;
+  --color-accent-text: #ffffff;
+  --color-on-accent: #000000;
+  --color-focus: #ffffff;
+  --color-success-bg: #000000;
+  --color-success-border: #ffffff;
+  --color-success-text: #ffffff;
+  --color-success-badge: #ffffff;
+  --color-success-on-badge: #000000;
+  --color-error-bg: #000000;
+  --color-error-border: #ffffff;
+  --color-error-text: #ffffff;
+  --color-error-badge: #ffffff;
+  --color-error-on-badge: #000000;
+}
+
+:root[data-appearance="hc-black-yellow"] {
+  color-scheme: dark;
+  --color-canvas: #000000;
+  --color-surface: #000000;
+  --color-surface-raised: #141400;
+  --color-text: #ffea00;
+  --color-text-muted: #fff380;
+  --color-border: #ffea00;
+  --color-border-subtle: #ffd600;
+  --color-accent: #ffea00;
+  --color-accent-hover: #ffd600;
+  --color-accent-text: #ffea00;
+  --color-on-accent: #000000;
+  --color-focus: #ffea00;
+  --color-success-bg: #000000;
+  --color-success-border: #ffea00;
+  --color-success-text: #ffea00;
+  --color-success-badge: #ffea00;
+  --color-success-on-badge: #000000;
+  --color-error-bg: #000000;
+  --color-error-border: #ffea00;
+  --color-error-text: #ffea00;
+  --color-error-badge: #ffea00;
+  --color-error-on-badge: #000000;
+}
+
+:root[data-appearance="grayscale"] {
+  color-scheme: light;
+  --color-canvas: #f4f4f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #e4e4e7;
+  --color-text: #18181b;
+  --color-text-muted: #3f3f46;
+  --color-border: #71717a;
+  --color-border-subtle: #d4d4d8;
+  --color-accent: #27272a;
+  --color-accent-hover: #18181b;
+  --color-accent-text: #18181b;
+  --color-on-accent: #ffffff;
+  --color-focus: #18181b;
+  --color-success-bg: #f4f4f5;
+  --color-success-border: #52525b;
+  --color-success-text: #18181b;
+  --color-success-badge: #27272a;
+  --color-success-on-badge: #ffffff;
+  --color-error-bg: #e4e4e7;
+  --color-error-border: #27272a;
+  --color-error-text: #18181b;
+  --color-error-badge: #18181b;
+  --color-error-on-badge: #ffffff;
+}
+
+:root[data-text-scale="25"] { font-size: 25%; }
+:root[data-text-scale="50"] { font-size: 50%; }
+:root[data-text-scale="75"] { font-size: 75%; }
+:root[data-text-scale="100"] { font-size: 100%; }
+:root[data-text-scale="112.5"] { font-size: 112.5%; }
+:root[data-text-scale="125"] { font-size: 125%; }
+:root[data-text-scale="150"] { font-size: 150%; }
+:root[data-text-scale="175"] { font-size: 175%; }
+:root[data-text-scale="200"] { font-size: 200%; }
+
+:root[data-underline-links="true"] a {
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+:root[data-locale-pending="true"] body {
+  visibility: hidden;
+}
+
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--color-canvas);
+  color: var(--color-text);
 }
 
 :focus-visible {
-  outline: 2px solid #1d4ed8;
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  :root {
+    --color-focus: Highlight;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/i18n/*.test.mjs src/appearance/*.test.mjs src/components/accessibility/*.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

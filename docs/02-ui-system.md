@@ -5,7 +5,8 @@
 ## Baseline & Constraints
 
 - **Framework:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 (`@import "tailwindcss";` in `frontend/src/app/globals.css`).
-- **Accessibility Baseline:** **WCAG 2.2 AA** light theme (no dark mode / theme switcher unless explicitly requested via `DEC-XXX`).
+- **Accessibility Baseline:** **WCAG 2.2 AA** with `light` / `dark` / `system` appearance support (`DEC-001`) using CSS `light-dark()` semantic tokens (`--color-canvas`, `--color-surface`, `--color-text`, `--color-border`, `--color-accent`).
+- **Localization Baseline:** `pl-PL` (default) and `en-US` via `LocaleProvider` + `useTranslations()` (`DEC-001`), persisted in `localStorage` (`hn26-locale`) with pre-hydration sync.
 - **Contrast & Targets:** `>= 4.5:1` normal text contrast, `>= 3:1` borders/controls contrast, visible `:focus-visible` outlines, `>= 44px` (`min-h-11`) interactive targets, non-color status cues (`PASS`/`FAIL` badges or icons + text), and `aria-live="polite"` for live updates.
 
 ## App Shell & Navigation

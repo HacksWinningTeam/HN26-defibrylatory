@@ -1,0 +1,101 @@
+/** English source phrases are stable message IDs. Never pass user content as a key. */
+export const polish = {
+  "Skip to main content": "Przejdź do głównej treści",
+  "Django + DRF + Next.js": "Django + DRF + Next.js",
+  "Docker Full-Stack Template": "Szablon Docker Full-Stack",
+  "Language": "Język",
+  "Appearance": "Wygląd",
+  "Light": "Jasny",
+  "Dark": "Ciemny",
+  "System": "Systemowy",
+  "High contrast: Black & White": "Wysoki kontrast: Czarno-biały",
+  "High contrast: Black & Yellow": "Wysoki kontrast: Czarno-żółty",
+  "Grayscale": "Skala szarości",
+  "Accessibility": "Dostępność",
+  "Accessibility settings": "Ustawienia dostępności",
+  "Open accessibility menu": "Otwórz menu dostępności",
+  "Close accessibility menu": "Zamknij menu dostępności",
+  "Display mode": "Tryb wyświetlania",
+  "Choose a color theme or high-contrast palette.":
+    "Wybierz motyw kolorystyczny lub paletę wysokiego kontrastu.",
+  "Text size": "Rozmiar tekstu",
+  "Adjust base text scale from 25% to 200%.":
+    "Dostosuj bazową skalę tekstu od 25% do 200%.",
+  "Decrease text size": "Zmniejsz rozmiar tekstu",
+  "Increase text size": "Zwiększ rozmiar tekstu",
+  "Reset text size": "Resetuj rozmiar tekstu",
+  "Text size: {0}%": "Rozmiar tekstu: {0}%",
+  "Links": "Linki",
+  "Always underline links across the interface.":
+    "Zawsze podkreślaj linki w całym interfejsie.",
+  "Underline links": "Podkreślaj linki",
+  "Read aloud": "Czytanie na głos",
+  "Listen to the main page content using browser speech synthesis.":
+    "Odsłuchaj główną treść strony za pomocą syntezatora mowy przeglądarki.",
+  "Read this page": "Czytaj tę stronę",
+  "Pause": "Wstrzymaj",
+  "Resume": "Wznów",
+  "Stop": "Zatrzymaj",
+  "Stop reading": "Zatrzymaj czytanie",
+  "Ready to read": "Gotowy do czytania",
+  "Reading": "Czytanie",
+  "Reading paused": "Czytanie wstrzymane",
+  "Finished reading": "Zakończono czytanie",
+  "No readable content found": "Nie znaleziono treści do odczytania",
+  "Read aloud is unavailable": "Czytanie na głos jest niedostępne",
+  "Read aloud is not supported in this browser":
+    "Czytanie na głos nie jest obsługiwane w tej przeglądarce",
+  "Reset": "Resetuj",
+  "Restore default appearance, 100% text size, and default links.":
+    "Przywróć domyślny wygląd, rozmiar tekstu 100% oraz domyślne linki.",
+  "Reset settings": "Resetuj ustawienia",
+  "Back to home": "Powrót do strony głównej",
+  "Saving…": "Zapisywanie…",
+  "The language could not be saved. Try again.":
+    "Nie udało się zapisać języka. Spróbuj ponownie.",
+  "The appearance could not be saved. Try again.":
+    "Nie udało się zapisać wyglądu. Spróbuj ponownie.",
+  "Full-Stack Docker Template Ready": "Szablon Full-Stack Docker jest gotowy",
+  "This starter pairs a Django 5.2 LTS and Django REST Framework backend with a Next.js 16 App Router frontend and PostgreSQL 18, wired together for both local hot-reload development and production builds.":
+    "Ten starter łączy backend Django 5.2 LTS i Django REST Framework z frontendem Next.js 16 App Router oraz bazą PostgreSQL 18, skonfigurowanymi pod lokalny rozwój z hot-reloadem i buildy produkcyjne.",
+  "API Documentation & Admin Links": "Dokumentacja API i panel administracyjny",
+  "Swagger UI": "Swagger UI",
+  "Interactive OpenAPI 3 documentation": "Interaktywna dokumentacja OpenAPI 3",
+  "ReDoc": "ReDoc",
+  "Clean API reference powered by drf-spectacular":
+    "Przejrzysta dokumentacja API generowana przez drf-spectacular",
+  "OpenAPI Schema": "Schemat OpenAPI",
+  "Raw OpenAPI 3 specification": "Surowa specyfikacja OpenAPI 3",
+  "Django Admin": "Panel Django Admin",
+  "Built-in administrative console": "Wbudowana konsola administracyjna",
+  "Backend & Database Connectivity": "Łączność z backendem i bazą danych",
+  "Verified via": "Zweryfikowano przez",
+  "Checking API...": "Sprawdzanie API...",
+  "Re-check API": "Sprawdź API ponownie",
+  "PASS": "OK",
+  "FAIL": "BŁĄD",
+  "Healthy": "Sprawne",
+  "Degraded": "Częściowo sprawne",
+  "Unreachable": "Nieosiągalne",
+  "Connected": "Połączono",
+  "Error": "Błąd",
+  "Unknown": "Nieznany",
+  "API Status: {0}": "Status API: {0}",
+  "Source:": "Źródło:",
+  "Server SSR": "Serwer SSR",
+  "Browser Fetch (CORS)": "Zapytanie z przeglądarki (CORS)",
+  "Browser Fetch (Same-Origin Proxy)":
+    "Zapytanie z przeglądarki (Proxy same-origin)",
+  "HTTP Status": "Status HTTP",
+  "No response": "Brak odpowiedzi",
+  "PostgreSQL Database": "Baza danych PostgreSQL",
+  "Server Timestamp (UTC)": "Znacznik czasu serwera (UTC)",
+  "N/A": "Brak",
+  "Detail: {0}": "Szczegóły: {0}",
+} as const;
+
+export type MessageKey = keyof typeof polish;
+
+export const english: { [K in MessageKey]: K } = Object.fromEntries(
+  Object.keys(polish).map((key) => [key, key]),
+) as { [K in MessageKey]: K };
