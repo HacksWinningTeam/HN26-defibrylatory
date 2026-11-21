@@ -1,10 +1,12 @@
 # `T08` — Schema & source coverage page (/schemat)
 
-- **Status:** `DESIGN_REVIEW`
+- **Status:** `CANCELLED`
 - **Layer:** `Frontend`
 - **UI Design Required:** `Yes`
 - **Depends On:** `T04`
 - **Traces To:** `REQ-01`, `REQ-02`, `REQ-05`, `REQ-10`, `DEC-004`
+
+> **Cancelled by DEC-014 (2026-11-22):** functionality moved into the dane.gov.pl fork; the schema and coverage are served by the portal (`/1.4/aed/schema`, `/1.4/aed/sources`, schema XLSX resource). The T07 link bug (`aed-schema.csv` → `aed-template.csv`) is handled in T15.
 
 ## Goal & User Outcome
 

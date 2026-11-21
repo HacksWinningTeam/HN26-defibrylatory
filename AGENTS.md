@@ -4,10 +4,10 @@ Shared workspace rules for **Antigravity** and **Claude Code** on this hackathon
 
 ## Hackathon Project Brief (Fill In At Kickoff)
 
-- **Problem & Demo Goal:** "Misja AED" — design a standard AED data schema, harvest every AED dataset from dane.gov.pl (+ OpenStreetMap), merge into one national dataset, expose it via a dane.gov.pl-compatible API, and show it published inside a locally running fork of dane.gov.pl (`dane-gov-pl/`).
-- **Primary User Flow:** Harvest (api.dane.gov.pl/1.4 search + resource downloads, OSM Overpass) -> map each source to the standard schema + coverage report -> merge/dedupe with provenance -> `/1.4`-style API + CSV/JSON/GeoJSON/XLSX exports -> dataset + resources registered in the local dane.gov.pl fork -> visible on the portal dataset page.
-- **Core Models & API Endpoints:** `Source`, `RawRecord`, `AED` (standard schema), `FieldMapping`; dane.gov.pl-compatible routes under `/api/1.4/...` (datasets, resources, resource data) + exports. Finalized in `docs/03-architecture.md`.
-- **Out of Scope for MVP:** Auth, writing to production dane.gov.pl, deploying the fork to Hetzner, crowdsourcing, Discourse forum.
+- **Problem & Demo Goal:** "Misja AED" — **pivot DEC-014 (2026-11-22):** AED aggregation + validation built **inside the dane.gov.pl portal fork** (`dane-gov-pl/`, new Django app `mcod.aed`, source tracked in `fork-config/mcod_aed/`). Many separate AED datasets in the portal (files + connected APIs) are converted to one standard structure and merged into a common dataset published in the portal; `POST /1.4/aed/validate` checks imported data against the structure. Our separate `backend/` is retired from the demo; the Next.js map (T07) reads the portal API.
+- **Primary User Flow:** AED source datasets in the portal (mirrored from dane.gov.pl: uploaded files, Warsaw API, OSM) -> "Agregacja AED" (command / admin / Celery) -> per-source conversion to the standard schema + coverage -> merge/dedupe -> common dataset "Defibrylatory AED – zbiór ogólnopolski" with native CSV/XLSX/GeoJSON (table + map preview, `/1.4` API) -> validation API for data owners -> map in Next.js.
+- **Core Models & API Endpoints:** fork app `mcod.aed`: `AedImportRun`, `AedSourceRecord`, `AedDevice`; Falcon routes `GET /1.4/aed/schema`, `POST /1.4/aed/validate`, `GET /1.4/aed/sources`, `GET /1.4/aed/devices`. Finalized in `docs/03-architecture.md` (DEC-014 section).
+- **Out of Scope for MVP:** Auth, writing to production dane.gov.pl, deploying the fork to Hetzner (T10 cancelled), crowdsourcing, Discourse forum, extending the retired `backend/`.
 - **Deadline / Demo / Code Freeze:** Submission 2026-11-22 11:00; demo slot TBD; code freeze 2026-11-22 09:00.
 
 ## Stack & Repository Map
@@ -56,7 +56,8 @@ Shared workspace rules for **Antigravity** and **Claude Code** on this hackathon
 ## Scoped Guides
 
 When working from the repository root, read the matching scoped guide before editing files inside that service:
-- Backend (`backend/`): read `backend/AGENTS.md`
+- Backend (`backend/`): read `backend/AGENTS.md` (retired from the demo by DEC-014 — do not extend)
+- dane.gov.pl fork (`fork-config/`, `fork-config/mcod_aed/`): read `fork-config/README.md`; never edit `dane-gov-pl/` directly — all changes live in `fork-config/` and are installed by `setup.sh`
 - Frontend (`frontend/`): read `frontend/AGENTS.md`
 
 ## Development Workflow & Project Memory (`docs/`)

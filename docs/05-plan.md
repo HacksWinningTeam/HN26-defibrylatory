@@ -13,7 +13,9 @@ Status lives in each task file's `Status` field; this table mirrors it.
 - `VERIFIED` — Automated checks passed AND the user confirmed the manual verification steps.
 - `CANCELLED` — Dropped via a `DEC-XXX` entry in `docs/04-decisions.md`.
 
-> Time budget (from 2026-11-21 18:10 to code freeze 2026-11-22 09:00 ≈ 14.5 h): estimates total ≈ 17 h (incl. T10 2.5 h, DEC-005) — over budget, with the T05 image build running in the background in parallel. Cut order if late: T08 → map extras in T07 → T10 falls back to local fork + screenshots → OSM (keep dane.gov.pl sources). Branding (logo, slogan, brand book, 25%) and slides are **not** code tasks and run in parallel (another team member).
+> **DEC-014 pivot (2026-11-22 00:00):** ~9 h to code freeze; new work T11–T15 + T09 ≈ 9 h. Cut order if late (DEC-015): converted per-source resources in T13 → T15 (map keeps the old backend as data source) → admin page in T13 (keep the command) → XLSX/GeoJSON outputs (keep CSV). T08/T10 cancelled.
+>
+> Previous budget (from 2026-11-21 18:10 to code freeze 2026-11-22 09:00 ≈ 14.5 h): estimates total ≈ 17 h (incl. T10 2.5 h, DEC-005) — over budget, with the T05 image build running in the background in parallel. Cut order if late: T08 → map extras in T07 → T10 falls back to local fork + screenshots → OSM (keep dane.gov.pl sources). Branding (logo, slogan, brand book, 25%) and slides are **not** code tasks and run in parallel (another team member).
 
 ## Milestone 1 — Core Vertical Slice (Schema → Data → API) + Fork Boot in Parallel
 
@@ -32,10 +34,22 @@ Status lives in each task file's `Status` field; this table mirrors it.
 | `T06` | Publish national AED dataset in the fork | Infra | No | `T04`, `T05` | 1.5 h | `VERIFIED` | [T06](tasks/T06-publish-to-fork.md) |
 | `T07` | AED map in Next.js — "Najbliższy AED" from BCTW Bydgoszcz (/) | Full-Stack | Yes | `T04` | 2 h | `VERIFIED` | [T07](tasks/T07-aed-map-nextjs.md) |
 
-## Milestone 3 — Demo Polish & End-to-End Readiness
+## Milestone 3 — Pivot (DEC-014): AED Aggregation + Validation Inside the dane.gov.pl Fork
+
+Order: T11 → T14 (validation needs only the ported schema/parsers — the explicitly requested API lands early) → T12 → T13 → T15 → T09.
 
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `T08` | Schema & source coverage page (/schemat) | Frontend | Yes | `T04` | 1 h | `DESIGN_REVIEW` | [T08](tasks/T08-schema-coverage-page.md) |
-| `T10` | Deploy dane.gov.pl fork to Hetzner (port 3080, sslip.io hosts) | Infra | No | `T06` | 2.5 h | `TODO` | [T10](tasks/T10-fork-hetzner.md) |
-| `T09` | Demo readiness: offline snapshot seed, demo script, prod check | Infra | No | `T06`, `T07`, `T10` | 1 h | `TODO` | [T09](tasks/T09-demo-readiness.md) |
+| `T11` | `mcod.aed` app in the fork: install mechanism, schema + parsers port, `GET /1.4/aed/schema`, data standard + "Standard danych" dataset field (DEC-015) | Backend (fork) | No | `T05` | 2 h | `TODO` | [T11](tasks/T11-mcod-aed-scaffold-schema.md) |
+| `T14` | Validation API `POST /1.4/aed/validate` + automatic validation on upload that blocks publishing (DEC-015) | Backend (fork) | No | `T11` | 2 h | `TODO` | [T14](tasks/T14-validation-api.md) |
+| `T12` | Mirror AED source datasets from dane.gov.pl into the fork (files + connected APIs) | Backend (fork) | No | `T11` | 1.5 h | `TODO` | [T12](tasks/T12-import-aed-sources-into-fork.md) |
+| `T13` | In-portal aggregation → converted sources + common dataset published natively; `/1.4/aed/sources`, `/1.4/aed/devices` | Backend (fork) | No | `T12` | 2.5 h | `TODO` | [T13](tasks/T13-in-portal-aggregation.md) |
+| `T15` | Next.js map reads data from the fork API | Frontend | No | `T13` | 1 h | `TODO` | [T15](tasks/T15-map-reads-fork-api.md) |
+
+## Milestone 4 — Demo Polish & End-to-End Readiness
+
+| ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `T08` | Schema & source coverage page (/schemat) — cancelled (DEC-014) | Frontend | Yes | `T04` | 1 h | `CANCELLED` | [T08](tasks/T08-schema-coverage-page.md) |
+| `T10` | Deploy dane.gov.pl fork to Hetzner — cancelled (DEC-014) | Infra | No | `T06` | 2.5 h | `CANCELLED` | [T10](tasks/T10-fork-hetzner.md) |
+| `T09` | Demo readiness (in-portal flow), offline snapshot, demo script, retire `backend/` decision | Infra | No | `T13`, `T14`, `T15` | 1 h | `TODO` | [T09](tasks/T09-demo-readiness.md) |

@@ -2,6 +2,47 @@
 
 > Living technical architecture for backend, API contract, frontend routes, and integrations. Updated by `hackathon-plan`, `hackathon-ui-design` (when UI requires new fields/endpoints), and `hackathon-update-plan`. Key choices logged in `DEC-004`.
 
+## Pivot (DEC-014, 2026-11-22): Everything Inside the dane.gov.pl Fork — `mcod.aed`
+
+> This section is authoritative. Sections below describe the pre-pivot architecture (our separate `backend/`), now retired from the demo but kept in the repo.
+
+```text
+ api.dane.gov.pl/1.4 + dane.um.warszawa.pl API + OpenAEDMap (OSM)
+        |  manage.py aed_import_sources (T12): mirror institutions + AED datasets
+        v
+ [dane.gov.pl fork: Django 2.2 admin / Falcon API / Celery / ES]   app mcod.aed (fork-config/mcod_aed -> backend_latest/mcod/aed)
+   AED source datasets (tag AED): file resources (ResourceFile) | API/link resources ("connected APIs")
+        |  aed_aggregate (T13): command | Celery task | admin "Agregacja AED"
+        v
+   parsers + mapping + normalize (T11, ported)  ->  AedSourceRecord (standard fields, flags, coverage)
+        |  -> converted CSV resource "… – wersja zgodna ze wzorcem AED" on each source dataset
+        v
+   merge/dedupe (DEC-011 rules)  ->  AedDevice  ->  common dataset "Defibrylatory AED – zbiór ogólnopolski"
+        (org Misja AED; CSV table+map, XLSX, GeoJSON, schema XLSX as native ResourceFiles; /1.4/datasets, /resources/{id}/data|geo)
+   Falcon /1.4/aed/schema | POST /1.4/aed/validate (T14) | /1.4/aed/sources | /1.4/aed/devices
+        |
+ Next.js map (T07 UI) -> same-origin route -> fork API (T15, DANEGOV_API_URL)
+```
+
+- **Code location & install:** `fork-config/mcod_aed/` (tracked) → `dane-gov-pl/backend_latest/mcod/aed/` via `fork-config/setup.sh` / `install_aed.sh` (copy + idempotent patch of `mcod/routes.py`; `INSTALLED_APPS += ["mcod.aed"]` in `fork-config/local.py`; migrations run in `mcod-admin`). Nothing else in `dane-gov-pl/` is edited by hand.
+- **Runtime:** Python 3.8, Django 2.2, Falcon 4 (`mcod-app:local` image); no new pip dependencies unless already in the image.
+- **Models:** `AedImportRun(started_at, finished_at, status, report JSON)`, `AedSourceRecord(resource FK, row_no, raw JSON, data JSON keyed by schema fields, lat, lon, valid, quality_flags JSON, device FK)`, `AedDevice(id_aed unique, data JSON, lat, lon, sources_count)`.
+- **API (dane.gov.pl 1.4 JSON:API envelope `data/links/meta`, `jsonapi`):**
+
+| Method & Path | Purpose | Task |
+| --- | --- | --- |
+| `GET /1.4/aed/schema` (+ `.xlsx`, `.csv` template, `.json` JSON Schema) | Standard structure | T11 |
+| `POST /1.4/aed/validate` (multipart `file` / JSON `url` / JSON `resource_id`), `GET` = help | Validate data against the structure: errors/warnings per row+field, column mapping, coverage | T14 |
+| `GET /1.4/aed/sources` | Per-source status, records, coverage per field, quality flags, last run | T13 |
+| `GET /1.4/aed/devices?bbox=&q=` | GeoJSON FeatureCollection, DEC-008 property contract (map) | T13 |
+| `GET /1.4/resources/{id}/standard-validation` | Stored automatic validation result of a resource in a standard dataset | T14 |
+| `data_standard` attribute in `GET /1.4/datasets[/{id}]` | Which standard (bigger dataset) a dataset belongs to | T11 |
+
+- **Data standards & dataset field (DEC-015):** `DataStandard(code "aed-pl", name, version, json_schema, target_dataset, max_invalid_ratio=0.2, is_active)`; `DatasetStandard(dataset OneToOne, standard FK)` = "Standard danych" dropdown in dataset admin + `data_standard` attribute in `/1.4/datasets`; `ResourceStandardValidation(resource OneToOne, status, blocking, rows_total, rows_invalid, errors, coverage, validated_at, standard_version)` → `GET /1.4/resources/{id}/standard-validation`. Blocking (unreadable / required columns missing / invalid rows > ratio): admin upload rejected synchronously in the resource form; other paths validated after the fork's file/data Celery tasks → resource set to `draft`. Aggregation = datasets with standard `aed-pl`, non-blocked resources only.
+- **Connectors (source resources):** file → main `ResourceFile`; link/API → generic CSV/JSON/GeoJSON URL, OpenAEDMap PL GeoJSON, Warsaw `POST .../api/action/<aed action>` with `WARSAW_API_TOKEN` (fork env; missing → `requires_api_key`, run continues).
+- **Tests:** `fork-config/test.sh` → `pytest mcod/aed/tests` inside `mcod-admin` (pure logic: schema, parsers, mapping, validation, merge; API smoke via Falcon test client if the fork's test settings allow).
+- **Frontend:** T07 UI unchanged; data from `/1.4/aed/devices` + `/1.4/aed/sources` (T15).
+
 ## High-Level Data Flow
 
 ```text

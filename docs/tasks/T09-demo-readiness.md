@@ -3,8 +3,10 @@
 - **Status:** `TODO`
 - **Layer:** `Infra`
 - **UI Design Required:** `No`
-- **Depends On:** `T06`, `T07`, `T10`
+- **Depends On:** `T13`, `T14`, `T15` (was T06, T07, T10 — DEC-014)
 - **Traces To:** `REQ-12`, `DEC-002`
+
+> **Updated by DEC-014 (2026-11-22):** demo = local fork with `mcod.aed` (source datasets → aggregation → common dataset → validation API → map). Also decide whether to drop the retired `backend/` from `compose*.yaml`/CI (keep the live deploy working) and refresh the offline snapshot inside `fork-config/mcod_aed/fixtures/`.
 
 ## Goal & User Outcome
 

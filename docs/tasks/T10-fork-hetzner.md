@@ -1,10 +1,12 @@
 # `T10` — Deploy the dane.gov.pl fork to Hetzner
 
-- **Status:** `TODO`
+- **Status:** `CANCELLED`
 - **Layer:** `Infra`
 - **UI Design Required:** `No`
 - **Depends On:** `T06`
 - **Traces To:** `REQ-14`, `REQ-09`, `DEC-005`
+
+> **Cancelled by DEC-014 (2026-11-22):** functionality moved into the dane.gov.pl fork; demo runs on the local fork only.
 
 ## Goal & User Outcome
 
