@@ -36,6 +36,6 @@ Status lives in each task file's `Status` field; this table mirrors it.
 
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `T08` | Schema & source coverage page (/schemat) | Frontend | Yes | `T04` | 1 h | `TODO` | [T08](tasks/T08-schema-coverage-page.md) |
+| `T08` | Schema & source coverage page (/schemat) | Frontend | Yes | `T04` | 1 h | `DESIGN_REVIEW` | [T08](tasks/T08-schema-coverage-page.md) |
 | `T10` | Deploy dane.gov.pl fork to Hetzner (port 3080, sslip.io hosts) | Infra | No | `T06` | 2.5 h | `TODO` | [T10](tasks/T10-fork-hetzner.md) |
 | `T09` | Demo readiness: offline snapshot seed, demo script, prod check | Infra | No | `T06`, `T07`, `T10` | 1 h | `TODO` | [T09](tasks/T09-demo-readiness.md) |
