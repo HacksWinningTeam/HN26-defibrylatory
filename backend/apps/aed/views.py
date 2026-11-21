@@ -5,6 +5,7 @@ import json
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,6 +33,7 @@ class SchemaDocumentView(APIView):
 
     authentication_classes = []
     permission_classes = []
+    renderer_classes = [JSONRenderer]
 
     @extend_schema(
         tags=[SCHEMA_TAG],
@@ -96,6 +98,7 @@ class SourcesReportView(APIView):
 
     authentication_classes = []
     permission_classes = []
+    renderer_classes = [JSONRenderer]
 
     @extend_schema(
         tags=["Sources"],

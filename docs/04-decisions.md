@@ -95,6 +95,13 @@
 - **Decision:** `SourceRecord.data` / `AED.data` are `JSONField`s keyed by standard schema field names (+ `lat`/`lon` columns), so the schema stays the single source of truth (instead of one DB column per field). Merge = greedy agglomeration by distance (≤ 25 m, or ≤ 75 m with name/address similarity ≥ 0.6) where a cluster never contains two records from the same resource; field precedence dane.gov.pl > OSM, first non-empty wins; `id_aed` = `PL-AED-` + hash of the top record key. Municipal sources get coordinate checks: point > 30 km from the source's median → `valid=False` + flag `wspolrzedne_daleko_od_pozostalych`; repeated coordinates → `wspolrzedne_powtorzone`; swapped lat/lon fixed + flagged. Coverage counts `nieznany` as empty. Raw payloads always deferred in record queries.
 - **Affected Docs & Tasks:** `docs/03-architecture.md`, T03, T04 (exports read `AED.data`).
 
+### `DEC-012` — T04: dane.gov.pl 1.4 Envelope Parity, Resource Layout, ODbL Licence
+- **Date:** 2026-11-21 21:53
+- **Status:** Accepted
+- **Context / New Info:** Real responses of `api.dane.gov.pl/1.4` (dataset 40593, resource 2625221 + `/data`) recorded as test fixtures. The merged database contains OpenStreetMap data (ODbL 1.0, share-alike).
+- **Decision:** `/api/1.4/datasets[/{id}[/resources]]`, `/api/1.4/resources/{id}[/data[/{row_uuid}]]` reproduce the portal envelope 1:1 at key level (`jsonapi`, `links`, `data{id,type,attributes,relationships,links}`, `meta{server_time,path,language,relative_uri,params,count}`; rows `colN={repr,val}` + `headers_map`/`data_schema`; `id,slug` path form accepted) — enforced by a test comparing keys with the fixtures. One dataset (id `1`, "Defibrylatory AED – zbiór ogólnopolski") with resources 1 CSV, 2 XLSX, 3 GeoJSON, 4 JSON (all tabular via `/data`) and 5 schema xlsx. Exports `/api/exports/aed.{csv,json,geojson,xlsx}` (standard column order, metadata block, cached per data version). **Licence of the merged dataset: ODbL 1.0** (because of OSM content; municipal CC0/CC BY data is compatible) — stated in exports and the portal metadata. `/api/aed/` per DEC-008 (~1.4 MB gzipped for the whole country); `GZipMiddleware` enabled.
+- **Affected Docs & Tasks:** `docs/03-architecture.md`, T04, T06 (fork dataset licence/links), T07.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`
