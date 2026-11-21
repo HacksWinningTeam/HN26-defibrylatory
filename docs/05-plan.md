@@ -21,8 +21,8 @@ Status lives in each task file's `Status` field; this table mirrors it.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `T01` | Standard AED schema + downloads (xlsx / CSV / JSON Schema) | Backend | No | — | 1.5 h | `VERIFIED` | [T01](tasks/T01-standard-aed-schema.md) |
 | `T02` | Harvester: dane.gov.pl API + OSM raw download | Backend | No | `T01` | 1.5 h | `VERIFIED` | [T02](tasks/T02-harvest-sources.md) |
-| `T03` | Parse, normalize, coverage report, merge & dedupe | Backend | No | `T02` | 2.5 h | `TODO` | [T03](tasks/T03-normalize-merge.md) |
-| `T04` | dane.gov.pl-compatible API (/api/1.4) + exports | Backend | No | `T03` | 1.5 h | `TODO` | [T04](tasks/T04-danegov-compatible-api-exports.md) |
+| `T03` | Parse, normalize, coverage report, merge & dedupe | Backend | No | `T02` | 2.5 h | `VERIFIED` | [T03](tasks/T03-normalize-merge.md) |
+| `T04` | dane.gov.pl-compatible API (/api/1.4) + exports | Backend | No | `T03` | 1.5 h | `IN_PROGRESS` | [T04](tasks/T04-danegov-compatible-api-exports.md) |
 | `T05` | Run dane.gov.pl fork locally (fork-config) — start now, parallel | Infra | No | — | 2 h | `VERIFIED` | [T05](tasks/T05-danegov-fork-boot.md) |
 
 ## Milestone 2 — Core Features (Portal + Map)

@@ -1,6 +1,6 @@
 # `T03` — Parse, normalize to standard schema, coverage report, merge & dedupe
 
-- **Status:** `TODO`
+- **Status:** `VERIFIED`
 - **Layer:** `Backend`
 - **UI Design Required:** `No`
 - **Depends On:** `T02`
@@ -37,19 +37,19 @@ N/A — backend/infra only.
 
 ## Acceptance Criteria
 
-- [ ] `harvest_aed` (online) and `harvest_aed --offline` both produce a merged `AED` table
-- [ ] Each source shows coverage per standard field via `/api/sources/`
-- [ ] Duplicates between municipal sources and OSM are merged; every AED lists its sources
-- [ ] Records with invalid coordinates are flagged/excluded, never silently moved
+- [x] `harvest_aed` (online) and `harvest_aed --offline` both produce a merged `AED` table
+- [x] Each source shows coverage per standard field via `/api/sources/`
+- [x] Duplicates between municipal sources and OSM are merged; every AED lists its sources
+- [x] Records with invalid coordinates are flagged/excluded, never silently moved
 
 ## Verification Checklist
 
 ### Automated Checks
-- [ ] `make test` passes (including new/updated unit & API tests for `T03`)
-- [ ] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
-- [ ] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
-- [ ] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
-- [ ] `make build-prod` passes
+- [x] `make test` passes (including new/updated unit & API tests for `T03`)
+- [x] `make lint` passes (`ruff check .`, `npm run typecheck`, `npm run lint`)
+- [x] `make schema-check` passes (`python manage.py spectacular --validate --fail-on-warn`)
+- [x] `make migrations-check` passes; migrations applied cleanly (`make migrate`) if models changed
+- [~] `make build-prod` not required (no deps/frontend/compose changes) — run at M1 end (T04)
 
 ### Manual Verification
 1. `docker compose exec backend python manage.py harvest_aed --offline` → summary: records per source, merged total, duplicates merged
@@ -57,5 +57,5 @@ N/A — backend/infra only.
 3. Spot-check in admin: a Marki AED has correct (lat ≈ 52.3, lon ≈ 21.1) and is linked to an OSM duplicate if one exists
 
 ### Sign-Off
-- **Verified By:** `—`
-- **Notes / Follow-Ups:** —
+- **Verified By:** User (marcin) on 2026-11-21 21:48
+- **Notes / Follow-Ups:** Observed 2026-11-21 21:21: live `harvest_aed` (fetch + parse + merge) 33 s, `--offline` 10 s → 19,084 records → **18,769 AEDs, 315 confirmed by 2+ sources** (Warsaw∩OSM 257+, Krosno∩OSM 20, Przemyśl∩OSM 16, Legionowo∩OSM 8, Marki∩OSM 3). Coverage (overall / required): Warsaw 38% / 100%, Legionowo 31%, Marki 29%, Krosno 28%, Przemyśl 27%, OSM 26% / 88% (OSM lacks `miejscowosc`). Quality findings: Marki — 7 swapped coordinates, 1 record with Krosno's coordinates (excluded), repeated coordinates; Legionowo — 6-digit TERC, `cecha_ulicy`=`ulica`; Warsaw — 606 free-text hours. 59 tests pass (23 new in `test_normalize_merge.py`). See DEC-011 (merge rules, JSON records, OOM fix).

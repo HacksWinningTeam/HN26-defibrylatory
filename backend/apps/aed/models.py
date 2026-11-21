@@ -57,6 +57,10 @@ class SourceResource(models.Model):
     selected = models.BooleanField(
         default=False, help_text="Best machine-readable resource of the dataset (used for parsing)"
     )
+    parse_status = models.CharField(max_length=20, blank=True)
+    parse_error = models.TextField(blank=True)
+    record_count = models.PositiveIntegerField(default=0)
+    coverage = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["dataset", "external_id"]
@@ -66,3 +70,48 @@ class SourceResource(models.Model):
 
     def __str__(self) -> str:
         return f"{self.dataset.title} [{self.format}] #{self.external_id}"
+
+
+class AED(models.Model):
+    """National merged AED record in the standard schema (``data`` keyed by schema fields)."""
+
+    id_aed = models.CharField(max_length=64, unique=True)
+    lat = models.FloatField()
+    lon = models.FloatField()
+    data = models.JSONField(default=dict)
+    sources_count = models.PositiveSmallIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id_aed"]
+        indexes = [models.Index(fields=["lat", "lon"])]
+        verbose_name = "AED"
+        verbose_name_plural = "AED"
+
+    def __str__(self) -> str:
+        return f"{self.id_aed} {self.data.get('nazwa', '')}"
+
+
+class SourceRecord(models.Model):
+    """One AED from one source resource, normalized to the standard schema."""
+
+    resource = models.ForeignKey(SourceResource, on_delete=models.CASCADE, related_name="records")
+    source_row_id = models.CharField(max_length=100)
+    raw = models.JSONField(default=dict)
+    data = models.JSONField(default=dict)
+    lat = models.FloatField(null=True, blank=True)
+    lon = models.FloatField(null=True, blank=True)
+    valid = models.BooleanField(default=True, help_text="Has usable coordinates inside Poland")
+    quality_flags = models.JSONField(default=list, blank=True)
+    aed = models.ForeignKey(
+        AED, on_delete=models.SET_NULL, null=True, blank=True, related_name="source_records"
+    )
+
+    class Meta:
+        ordering = ["resource", "source_row_id"]
+        constraints = [
+            models.UniqueConstraint(fields=["resource", "source_row_id"], name="uniq_source_record")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.resource} row {self.source_row_id}"

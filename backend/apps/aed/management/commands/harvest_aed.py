@@ -2,7 +2,7 @@
 
 from django.core.management.base import BaseCommand
 
-from apps.aed import harvest
+from apps.aed import harvest, merge
 from apps.aed.models import SourceDataset
 
 
@@ -35,6 +35,20 @@ class Command(BaseCommand):
                     f"{res.fetch_status:<22} {res.size:>9} {mark}"
                 )
         self.stdout.write("(* = selected resource used for parsing)")
+        if not options["fetch_only"]:
+            summary = merge.process_all()
+            self.stdout.write("")
+            self.stdout.write(f"{'parsed resource':<62} {'rows':>6} {'valid':>6} {'coverage':>9}")
+            for result in summary["resources"]:
+                res = result.resource
+                cov = res.coverage.get("overall", 0) if res.coverage else 0
+                line = (f"{res.dataset.title[:60]:<62} {result.records:>6} {result.valid:>6} "
+                        f"{cov:>8.0%}")
+                self.stdout.write(line + (f"  ERROR {result.error}" if result.error else ""))
+            self.stdout.write(self.style.SUCCESS(
+                f"Merged {summary['records']} valid records into {summary['aeds']} AEDs "
+                f"({summary['merged_groups']} AEDs confirmed by 2+ sources)."
+            ))
         if options["save_snapshot"]:
             count = harvest.save_snapshot()
             self.stdout.write(self.style.SUCCESS(f"Snapshot saved ({count} datasets)."))

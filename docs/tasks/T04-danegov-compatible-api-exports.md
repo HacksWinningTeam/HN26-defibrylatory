@@ -1,6 +1,6 @@
 # `T04` — dane.gov.pl-compatible API (/api/1.4) + open exports
 
-- **Status:** `TODO`
+- **Status:** `IN_PROGRESS`
 - **Layer:** `Backend`
 - **UI Design Required:** `No`
 - **Depends On:** `T03`

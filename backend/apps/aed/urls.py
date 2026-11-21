@@ -5,6 +5,7 @@ from django.urls import path
 from apps.aed import views
 
 urlpatterns = [
+    path("sources/", views.SourcesReportView.as_view(), name="aed-sources"),
     path("schema-standard/", views.SchemaDocumentView.as_view(), name="aed-schema"),
     path(
         "schema-standard/aed-schema.xlsx",

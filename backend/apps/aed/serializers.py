@@ -46,3 +46,42 @@ class SchemaDocumentSerializer(serializers.Serializer):
     obligations = serializers.ListField(child=serializers.CharField())
     groups = FieldGroupSerializer(many=True)
     fields = FieldSpecSerializer(many=True)
+
+
+class CoverageSerializer(serializers.Serializer):
+    """Share (0-1) of records with a non-empty value, per standard field and per group."""
+
+    records = serializers.IntegerField()
+    required = serializers.FloatField()
+    recommended = serializers.FloatField()
+    overall = serializers.FloatField()
+    fields = serializers.DictField(child=serializers.FloatField())
+
+
+class SourceSerializer(serializers.Serializer):
+    """One harvested source dataset with its reference scope (coverage of the standard schema)."""
+
+    id = serializers.CharField(help_text="kind:external_id, e.g. dane_gov_pl:3624")
+    title = serializers.CharField()
+    publisher = serializers.CharField(allow_blank=True)
+    kind = serializers.ChoiceField(choices=["dane_gov_pl", "osm"])
+    url = serializers.CharField(allow_blank=True)
+    license_name = serializers.CharField(allow_blank=True)
+    format = serializers.CharField(allow_blank=True)
+    status = serializers.CharField(help_text="ok | not_machine_readable | requires_api_key | error")
+    status_note = serializers.CharField(allow_blank=True)
+    resources_count = serializers.IntegerField()
+    record_count = serializers.IntegerField()
+    valid_count = serializers.IntegerField()
+    confirmed_by_other_sources = serializers.IntegerField()
+    coverage = CoverageSerializer(allow_null=True)
+    quality_flags = serializers.DictField(child=serializers.IntegerField())
+
+
+class SourcesReportSerializer(serializers.Serializer):
+    aed_count = serializers.IntegerField()
+    multi_source_aed_count = serializers.IntegerField()
+    record_count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(allow_null=True)
+    schema_version = serializers.CharField()
+    sources = SourceSerializer(many=True)

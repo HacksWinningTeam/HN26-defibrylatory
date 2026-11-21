@@ -41,10 +41,10 @@
 - **`apps.aed`** (new):
   - `SourceDataset`: `kind` (`dane_gov_pl` / `osm`), `external_id` (dane.gov.pl dataset id), `title`, `publisher`, `url`, `license_name`, `harvested_at`.
   - `SourceResource`: FK `SourceDataset`, `external_id`, `format`, `url`, `raw` (BinaryField, stored raw payload — no media files, safe for the non-root prod container), `selected` (bool, chosen best format per dataset: GeoJSON > CSV > XLSX > JSON > XML), `parse_status`, `parse_error`, `record_count`, `coverage` (JSON: field -> filled ratio).
-  - `SourceRecord`: FK `SourceResource`, `source_row_id`, `raw` (JSON original row), one column per standard schema field (normalized), FK `aed` (nullable, set by merge), `quality_flags` (JSON list).
-  - `AED`: national merged record; one column per standard schema field; `id_aed` stable (e.g. `PL-AED-000123`); M2M via `SourceRecord.aed` gives provenance; `sources_count`.
+  - `SourceRecord`: FK `SourceResource`, `source_row_id`, `raw` (JSON original row), `data` (JSON keyed by standard schema fields, normalized), `lat`/`lon`, `valid`, `quality_flags` (JSON list), FK `aed` (set by merge) — DEC-011.
+  - `AED`: national merged record; `data` (JSON keyed by standard schema fields), `lat`/`lon`, `id_aed` (`PL-AED-` + hash of top source record key), `sources_count`; provenance via `SourceRecord.aed` — DEC-011.
   - Parsers: `apps/aed/parsers/` (`csv_generic.py` with delimiter/encoding sniffing, `xlsx.py`, `geojson.py`, `osm.py`) + `mappings.py` (header synonyms -> standard fields, plus per-source overrides, e.g. Marki: row-wrapped quoting and lat/lon swapped under lon/lat headers).
-  - Services: `harvest.py` (dane.gov.pl API client + Overpass client, retries, timeouts), `normalize.py` (coordinates validation inside PL bbox, swap detection, address splitting, postcode regex), `merge.py` (dedupe: same point within 25 m, or within 75 m with name/address similarity; field precedence: official dane.gov.pl source > OSM; non-empty wins).
+  - Services: `harvest.py` (dane.gov.pl API client + Overpass client, retries, timeouts), `normalize.py` (coordinates validation inside PL bbox, swap detection, address splitting, postcode regex), `merge.py` (greedy dedupe: ≤ 25 m, or ≤ 75 m + name/address similarity; never two records of one resource per cluster; precedence dane.gov.pl > OSM; first non-empty wins; municipal coordinate checks — DEC-011), `sources_report.py` (`/api/sources/`).
   - Management commands: `harvest_aed` (fetch + parse + merge; `--offline` uses committed snapshot), `load_aed_snapshot` (demo fallback, idempotent).
 
 ## API Endpoints Overview (`drf-spectacular`)

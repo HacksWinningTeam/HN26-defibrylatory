@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.aed import schema_export
-from apps.aed.serializers import SchemaDocumentSerializer
+from apps.aed.serializers import SchemaDocumentSerializer, SourcesReportSerializer
+from apps.aed.sources_report import build_report
 
 SCHEMA_TAG = "Standard AED schema"
 
@@ -88,3 +89,18 @@ class SchemaTableSchemaView(_FileView):
     )
     def get(self, request: Request) -> HttpResponse:
         return _json_download(schema_export.table_schema(), "table-schema.json")
+
+
+class SourcesReportView(APIView):
+    """Harvested sources with record counts, quality flags and coverage of the standard schema."""
+
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        tags=["Sources"],
+        summary="Harvested AED sources and their reference scope (schema coverage)",
+        responses={200: SourcesReportSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        return Response(SourcesReportSerializer(build_report()).data)

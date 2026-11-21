@@ -69,7 +69,7 @@
 
 ### `DEC-008` — T07 UI Design: `/api/aed/` Map Contract, Client-Side Filtering, Shared Primitives
 - **Date:** 2026-11-21 19:38
-- **Status:** Accepted (pending user approval of the T07 design)
+- **Status:** Accepted (UI parts refined by DEC-010; API contract unchanged)
 - **Context / New Info:** T07 per-task UI design needs exact properties for the map popup/list and landing counters; T04 only said "lightweight GeoJSON". Users are the public in an emergency (mobile, fast) and judges.
 - **Decision:** `/api/aed/` returns a FeatureCollection with `meta {count, generated_at, license}` and properties `id_aed, nazwa, adres (display string), miejscowosc, opis_lokalizacji, w_budynku, pietro, dostep, godziny_dostepnosci, zabezpieczenie, status, dysponent, telefon_kontaktowy, data_aktualizacji, zrodla[{nazwa, typ, url}]` (schema names/codes, empty = `null`). The UI loads the full set once and searches/filters (24/7, public) and sorts by distance (browser geolocation, optional) client-side; `q`/`bbox` stay for API users. Django `GZipMiddleware` enabled. `/api/sources/` exposes `aed_count`, `updated_at`, `sources[].{id,title,kind,url,record_count}`. New shared UI primitives: `EmergencyBanner` (112), `Badge`, warning colour tokens; AppShell rebranded to "Misja AED" with nav and full-bleed `/mapa`. Optional server env `DANEGOV_FORK_URL` for the landing link to the fork. Navigation = external OSM directions / `geo:` link only (no in-app routing).
 - **Affected Docs & Tasks:** `docs/03-architecture.md`, `docs/02-ui-system.md`, `docs/tasks/T07-aed-map-nextjs.md`, T03 (`/api/sources/` fields), T04 (`/api/aed/` properties + gzip).
@@ -87,6 +87,13 @@
 - **Context / New Info:** User asked to hardcode the current location to Bydgoszcz exhibition centre and to make the UI very simple and highly visible.
 - **Decision:** Single page `/` "Najbliższy AED": big 112 banner, "Jesteś tutaj: Bydgoskie Centrum Targowo-Wystawiennicze, Bydgoszcz (lokalizacja demonstracyjna)" at 53.170719, 18.047651 (OSM Nominatim), one big card for the nearest AED (distance, walking time "w linii prostej", ≤ 3 badges, "PROWADŹ DO AED" OSM walking route), rows #2–#5, map with numbered pins 1–5 + clustered rest, "Skąd są te dane?" section (counts, sources, schema/exports/API/fork links). Removed: search, filters, browser geolocation (also avoids the https requirement on the plain-http Hetzner deploy), map/list toggle. `/mapa` redirects to `/`. Optional `?lat=&lon=&miejsce=` override. Answers to v1 open questions: load all AEDs once (yes), fork link via `DANEGOV_FORK_URL` (yes), drop health card (yes), single "Prowadź" link (no `geo:`).
 - **Affected Docs & Tasks:** `docs/tasks/T07-aed-map-nextjs.md`, `docs/03-architecture.md` (frontend routes), `docs/02-ui-system.md`.
+
+### `DEC-011` — T03: Schema-Keyed JSON Records, Merge Rules, Coordinate Quality Checks
+- **Date:** 2026-11-21 21:21
+- **Status:** Accepted
+- **Context / New Info:** Implementing T03 on real data (19,084 records). Plain transitive clustering chained distinct devices (two Warsaw AEDs in one building merged through an OSM point between them); Marki publishes one record with Krosno's coordinates (250 km away) and repeats coordinates for different schools; loading records with `select_related` pulled the 7 MB OSM payload per row (container OOM-killed).
+- **Decision:** `SourceRecord.data` / `AED.data` are `JSONField`s keyed by standard schema field names (+ `lat`/`lon` columns), so the schema stays the single source of truth (instead of one DB column per field). Merge = greedy agglomeration by distance (≤ 25 m, or ≤ 75 m with name/address similarity ≥ 0.6) where a cluster never contains two records from the same resource; field precedence dane.gov.pl > OSM, first non-empty wins; `id_aed` = `PL-AED-` + hash of the top record key. Municipal sources get coordinate checks: point > 30 km from the source's median → `valid=False` + flag `wspolrzedne_daleko_od_pozostalych`; repeated coordinates → `wspolrzedne_powtorzone`; swapped lat/lon fixed + flagged. Coverage counts `nieznany` as empty. Raw payloads always deferred in record queries.
+- **Affected Docs & Tasks:** `docs/03-architecture.md`, T03, T04 (exports read `AED.data`).
 
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
