@@ -4,11 +4,11 @@ Shared workspace rules for **Antigravity** and **Claude Code** on this hackathon
 
 ## Hackathon Project Brief (Fill In At Kickoff)
 
-- **Problem & Demo Goal:** `<1-2 sentences describing what the app proves in the demo>`
-- **Primary User Flow:** `<step-by-step happy path from UI to DB and back>`
-- **Core Models & API Endpoints:** `<key models and /api/... routes>`
-- **Out of Scope for MVP:** `<features intentionally skipped during the hackathon>`
-- **Deadline / Demo / Code Freeze:** `<YYYY-MM-DD HH:MM submission deadline, demo slot, code-freeze time>`
+- **Problem & Demo Goal:** "Misja AED" — design a standard AED data schema, harvest every AED dataset from dane.gov.pl (+ OpenStreetMap), merge into one national dataset, expose it via a dane.gov.pl-compatible API, and show it published inside a locally running fork of dane.gov.pl (`dane-gov-pl/`).
+- **Primary User Flow:** Harvest (api.dane.gov.pl/1.4 search + resource downloads, OSM Overpass) -> map each source to the standard schema + coverage report -> merge/dedupe with provenance -> `/1.4`-style API + CSV/JSON/GeoJSON/XLSX exports -> dataset + resources registered in the local dane.gov.pl fork -> visible on the portal dataset page.
+- **Core Models & API Endpoints:** `Source`, `RawRecord`, `AED` (standard schema), `FieldMapping`; dane.gov.pl-compatible routes under `/api/1.4/...` (datasets, resources, resource data) + exports. Finalized in `docs/03-architecture.md`.
+- **Out of Scope for MVP:** Auth, writing to production dane.gov.pl, deploying the fork to Hetzner, crowdsourcing, Discourse forum.
+- **Deadline / Demo / Code Freeze:** Submission 2026-11-22 11:00; demo slot TBD; code freeze 2026-11-22 09:00.
 
 ## Stack & Repository Map
 

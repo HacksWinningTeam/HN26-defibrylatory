@@ -25,6 +25,34 @@
 - **Decision:** Imported the full `appearance/` (`system`, `light`, `dark`, `hc-black-white`, `hc-black-yellow`, `grayscale`), `i18n/` (`pl-PL` default, `en-US`), and `components/accessibility/` + `/settings/accessibility` WCAG 2.2 AA system (pre-hydration script, CSS semantic tokens, `AccessibilityProvider`, `AccessibilityMenu`, `textScale` 25%–200%, `underlineLinks`, `Read aloud` via `speechSynthesis`, and `node --test` unit tests).
 - **Affected Docs & Tasks:** `docs/02-ui-system.md`, `docs/accessibility-system.md`, `frontend/package.json`, `frontend/src/app/`, `frontend/src/appearance/`, `frontend/src/i18n/`, `frontend/src/components/`, `frontend/src/lib/`.
 
+### `DEC-002` — Kickoff: "Misja AED" MVP Scope, Timeline, and dane.gov.pl Fork
+- **Date:** 2026-11-21 18:00
+- **Status:** Accepted (fork-hosting part superseded by DEC-005)
+- **Context / New Info:** Organizer brief "Misja AED – Dane na ratunek" (`docs/inputs/organizer-brief/brief.pdf`, transcribed to `brief.md`). Deadline 2026-11-22 11:00. User: the common schema is the most important part; harvest all AED data from dane.gov.pl (+ OSM), merge into one file, expose dane.gov.pl-compatible API, and run a local fork of dane.gov.pl (upstream code copied into `dane-gov-pl/`) showing the data. A live API check on 2026-11-21 found ~5 real AED datasets on dane.gov.pl (Krosno, Marki, Przemyśl, Legionowo, generic "Lokalizacja defibrylatorów (AED)") with heterogeneous formats.
+- **Decision:** MVP = standard schema (+ `.xlsx`/CSV/JSON Schema), harvester (dane.gov.pl API + OSM Overpass), per-source mapping + coverage report, merge/dedupe with provenance, `/1.4`-style JSON:API endpoints + open exports, and the merged dataset published in the local fork (resources pointing to our exports). Fork runs locally only, without Discourse; setup timeboxed ~2 h with a Next.js dataset-page fallback. `dane-gov-pl/` is git-ignored; fork config/overrides tracked separately. Code freeze 2026-11-22 09:00. Branding (logo/slogan/brand book, 25%) is a required deliverable with owner still open.
+- **Affected Docs & Tasks:** `docs/01-brief.md`, `AGENTS.md`, `docs/inputs/my-notes.md`, `docs/02-ui-system.md`, `.gitignore`.
+
+### `DEC-003` — Brief Approved + AED Map in Next.js
+- **Date:** 2026-11-21 18:03
+- **Status:** Accepted
+- **Context / New Info:** User approved `docs/01-brief.md` and asked for a map visualisation of AEDs in our Next.js app at the end.
+- **Decision:** Added `REQ-13` (Must): interactive map of merged AEDs in Next.js, scheduled last after the data pipeline and fork tasks. Removed it from Nice-to-Have. Map library chosen in `docs/03-architecture.md`.
+- **Affected Docs & Tasks:** `docs/01-brief.md`, `docs/02-ui-system.md`; tasks created by `hackathon-plan`.
+
+### `DEC-004` — Architecture: Schema-First Pipeline, dane.gov.pl-Compatible API, Fork Integration
+- **Date:** 2026-11-21 18:10
+- **Status:** Accepted
+- **Context / New Info:** Plan created. Fork investigation: resource links must be `https://` (fork `forms.py:683`, `link_validation.py:92`, cert not verified); JSON links are classified as "api" (no preview); map preview needs a tabular resource with numeric lat/lon + label columns; fork publishes host ports 5432/6379/9200/80/443 etc.; app image is Python 3.8 (20–40 min build). Real sources inspected: Krosno CSV (lon,lat), Marki CSV (row-wrapped quoting, lat/lon swapped), Przemyśl (`;` CSV/GeoJSON/JSON/GML), Legionowo CSV with TERYT address columns, Warszawa (link to city catalogue).
+- **Decision:** One new Django app `apps.aed`; standard schema defined once in `schema.py` (Polish ASCII snake_case, TERYT-style address, WGS84) and all artefacts generated from it; harvest → per-source parse/mapping → normalize → merge (distance + similarity, dane.gov.pl over OSM) with provenance; dane.gov.pl-compatible JSON:API under `/api/1.4/...` + exports under `/api/exports/`; fork config tracked in `fork-config/` with an nginx `aed.mcod.local` https proxy to our backend and reset host ports; publishing via Django-shell script; CSV is the primary previewed resource in the fork; Next.js map with Leaflet + clustering and OSM tiles; committed raw snapshot as offline demo fallback.
+- **Affected Docs & Tasks:** `docs/03-architecture.md`, `docs/05-plan.md`, `docs/01-brief.md`, T01–T09.
+
+### `DEC-005` — dane.gov.pl Fork Also on Hetzner (ubuntu-4gb-hel1-2)
+- **Date:** 2026-11-21 18:18
+- **Status:** Accepted (supersedes the "fork local only" part of `DEC-002`)
+- **Context / New Info:** User wants the fork reachable on the Hetzner server `ubuntu-4gb-hel1-2` (4 GB RAM) too. Constraints: only ports 3000–3100 are open; `deploy.yml` does `rsync --delete` into `/home/github/apps/<repo>/`, so untracked files there are wiped; `dane-gov-pl/` is git-ignored (222 MB); fork stack (ES 1 GB heap, RabbitMQ, Redis, Postgres, 3 Python 3.8 app containers, Angular) plus our stack is very tight in 4 GB.
+- **Decision:** Fork stays a separate app with exactly one public port (fork nginx on `3080`, our app keeps `3000`), living outside the CI-synced dir (`/home/github/apps/danegov-fork/`), deployed manually from `fork-config/` (rsync code + config; images built locally and transferred with `docker save | ssh docker load` to avoid a 30+ min build on the server). Hostnames via wildcard DNS (`mcod.<ip>.sslip.io`, `api.…`, `admin.…`, `aed.…`) so judges need no `/etc/hosts`. Server check (2026-11-21 18:36): 15 GB RAM, 8 vCPU, 4 GB swap, `vm.max_map_count` OK, ufw inactive, access via `ssh hack` (root), GitHub self-hosted runner on the same host → no rescale; ES keeps default 1 GB heap. Server is shared: 3000 = `django-nextjs-template`, 3001 = `HN26-PCI`, so our app moves to `FRONTEND_PORT=3002` (server `.env`) and the fork uses `3080`. Local fork (T05/T06) first; server deploy is new task T10 in M3; fallback = local fork + screenshots.
+- **Affected Docs & Tasks:** `docs/01-brief.md`, `docs/03-architecture.md`, `docs/05-plan.md`, T05, new T10.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`

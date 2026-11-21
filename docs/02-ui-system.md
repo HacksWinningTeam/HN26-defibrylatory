@@ -12,7 +12,7 @@
 ## App Shell & Navigation
 
 - **Global Layout (`frontend/src/app/layout.tsx`):** `<Header brand/nav, max-width container, footer>`
-- **Primary Navigation Items:** `<Links shown across pages>`
+- **Primary Navigation Items:** Schema (standard AED schema + downloads), Sources (coverage per source), Map (merged AEDs, Must per DEC-003), Schema (standard AED schema + downloads), Sources (coverage per source, Nice-to-Have). The dane.gov.pl fork is the primary portal UI; our Next.js app hosts the map.
 
 ## Color & Typography Tokens
 
@@ -32,4 +32,4 @@ Track reusable components as tasks create or update them:
 
 ## Reference Assets (`docs/inputs/ui/`)
 
-- `<List any logo, palette, or screenshot filenames placed in docs/inputs/ui/>`
+- None yet. Campaign logo/brand colors to be added here once produced (REQ-11).

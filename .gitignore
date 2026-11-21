@@ -236,3 +236,6 @@ staticfiles/
 # OS
 .DS_Store
 
+
+# Local copy of upstream dane.gov.pl code (DEC-002) — run locally only, not synced to Hetzner
+/dane-gov-pl/

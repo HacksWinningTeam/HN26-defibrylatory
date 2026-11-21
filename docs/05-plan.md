@@ -1,6 +1,6 @@
 # 05 — Master Implementation Plan
 
-> Vertical-slice development roadmap. Each task links to a dedicated verifiable spec in `docs/tasks/TXX-*.md`. `hackathon-plan` replaces the `<Example: ...>` rows below with real tasks and links.
+> Vertical-slice development roadmap. Each task links to a dedicated verifiable spec in `docs/tasks/TXX-*.md`.
 
 ## Task Status Legend
 
@@ -13,19 +13,29 @@ Status lives in each task file's `Status` field; this table mirrors it.
 - `VERIFIED` — Automated checks passed AND the user confirmed the manual verification steps.
 - `CANCELLED` — Dropped via a `DEC-XXX` entry in `docs/04-decisions.md`.
 
-## Milestone 1 — Core Vertical Slice (MVP Skeleton)
+> Time budget (from 2026-11-21 18:10 to code freeze 2026-11-22 09:00 ≈ 14.5 h): estimates total ≈ 17 h (incl. T10 2.5 h, DEC-005) — over budget, with the T05 image build running in the background in parallel. Cut order if late: T08 → map extras in T07 → T10 falls back to local fork + screenshots → OSM (keep dane.gov.pl sources). Branding (logo, slogan, brand book, 25%) and slides are **not** code tasks and run in parallel (another team member).
 
-| ID | Task | Layer | UI Design? | Depends On | Status | Spec |
-| --- | --- | --- | --- | --- | --- | --- |
-| `T01` | `<Example: Core domain model + CRUD API>` | Backend | No | — | `TODO` | [T01](tasks/_template.md) |
-| `T02` | `<Example: Primary user workflow screen>` | Full-Stack | Yes | `T01` | `TODO` | [T02](tasks/_template.md) |
+## Milestone 1 — Core Vertical Slice (Schema → Data → API) + Fork Boot in Parallel
 
-## Milestone 2 — Core Features
+| ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `T01` | Standard AED schema + downloads (xlsx / CSV / JSON Schema) | Backend | No | — | 1.5 h | `TODO` | [T01](tasks/T01-standard-aed-schema.md) |
+| `T02` | Harvester: dane.gov.pl API + OSM raw download | Backend | No | `T01` | 1.5 h | `TODO` | [T02](tasks/T02-harvest-sources.md) |
+| `T03` | Parse, normalize, coverage report, merge & dedupe | Backend | No | `T02` | 2.5 h | `TODO` | [T03](tasks/T03-normalize-merge.md) |
+| `T04` | dane.gov.pl-compatible API (/api/1.4) + exports | Backend | No | `T03` | 1.5 h | `TODO` | [T04](tasks/T04-danegov-compatible-api-exports.md) |
+| `T05` | Run dane.gov.pl fork locally (fork-config) — start now, parallel | Infra | No | — | 2 h | `TODO` | [T05](tasks/T05-danegov-fork-boot.md) |
 
-| ID | Task | Layer | UI Design? | Depends On | Status | Spec |
-| --- | --- | --- | --- | --- | --- | --- |
+## Milestone 2 — Core Features (Portal + Map)
+
+| ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `T06` | Publish national AED dataset in the fork | Infra | No | `T04`, `T05` | 1.5 h | `TODO` | [T06](tasks/T06-publish-to-fork.md) |
+| `T07` | AED map in Next.js (/mapa) | Full-Stack | Yes | `T04` | 2 h | `TODO` | [T07](tasks/T07-aed-map-nextjs.md) |
 
 ## Milestone 3 — Demo Polish & End-to-End Readiness
 
-| ID | Task | Layer | UI Design? | Depends On | Status | Spec |
-| --- | --- | --- | --- | --- | --- | --- |
+| ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `T08` | Schema & source coverage page (/schemat) | Frontend | Yes | `T04` | 1 h | `TODO` | [T08](tasks/T08-schema-coverage-page.md) |
+| `T10` | Deploy dane.gov.pl fork to Hetzner (port 3080, sslip.io hosts) | Infra | No | `T06` | 2.5 h | `TODO` | [T10](tasks/T10-fork-hetzner.md) |
+| `T09` | Demo readiness: offline snapshot seed, demo script, prod check | Infra | No | `T06`, `T07`, `T10` | 1 h | `TODO` | [T09](tasks/T09-demo-readiness.md) |
