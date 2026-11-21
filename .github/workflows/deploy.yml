@@ -1,0 +1,28 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy with Docker Compose
+        run: |
+          APP_DIR="/home/github/apps/${{ github.event.repository.name }}"
+          mkdir -p "$APP_DIR"
+          chmod -R u+w "$APP_DIR/.git" 2>/dev/null || true
+          rm -rf "$APP_DIR/.git"
+          if command -v rsync >/dev/null 2>&1; then
+            rsync -a --delete --exclude='.git' --exclude='.env' ./ "$APP_DIR/"
+          else
+            tar --exclude='.git' --exclude='.env' -cf - . | tar -xf - -C "$APP_DIR"
+          fi
+          cd "$APP_DIR"
+          docker compose -f compose.prod.yaml up -d --build --remove-orphans
