@@ -12,7 +12,7 @@
 ## App Shell & Navigation
 
 - **Global Layout (`frontend/src/app/layout.tsx`):** `<Header brand/nav, max-width container, footer>`
-- **Primary Navigation Items:** Schema (standard AED schema + downloads), Sources (coverage per source), Map (merged AEDs, Must per DEC-003), Schema (standard AED schema + downloads), Sources (coverage per source, Nice-to-Have). The dane.gov.pl fork is the primary portal UI; our Next.js app hosts the map.
+- **Primary Navigation Items:** Brand "Misja AED · Dane na ratunek"; `Start` (`/`), `Mapa AED` (`/mapa`, Must per DEC-003), `Schemat` (`/schemat`, added by T08); `aria-current="page"` on the active item. `/mapa` renders full-bleed (no `max-w-4xl` main) — T07. The dane.gov.pl fork is the primary portal UI; our Next.js app hosts the map.
 
 ## Color & Typography Tokens
 
@@ -29,6 +29,9 @@ Track reusable components as tasks create or update them:
 | Component | Path | Purpose | Introduced In |
 | --- | --- | --- | --- |
 | `HealthStatusCard` | `frontend/src/components/HealthStatusCard.tsx` | Live API & DB connectivity banner pattern | Starter template |
+| `EmergencyBanner` | `frontend/src/components/EmergencyBanner.tsx` | "W nagłym wypadku dzwoń 112" `<aside>` with `tel:112` button, on `/` and `/mapa` | T07 (design) |
+| `Badge` | `frontend/src/components/ui/Badge.tsx` | Status pill, `variant: neutral/success/warning/error`, always icon + text (non-colour cue) | T07 (design) |
+| Warning tokens | `frontend/src/app/globals.css` | `--color-warning-bg/-border/-text/-badge/-on-badge` for every appearance mode (locked AED, restricted access) | T07 (design) |
 
 ## Reference Assets (`docs/inputs/ui/`)
 

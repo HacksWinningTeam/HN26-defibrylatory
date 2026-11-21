@@ -154,6 +154,9 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
+# AED harvester: token for the Warsaw open data API (dane.um.warszawa.pl/key-api).
+WARSAW_API_TOKEN = env("WARSAW_API_TOKEN", default="")
+
 SPECTACULAR_SETTINGS = {
     "TITLE": env("API_TITLE", default="Django + Next.js API"),
     "DESCRIPTION": "REST API powered by Django, Django REST Framework, and drf-spectacular.",

@@ -20,7 +20,7 @@
                                   -> Resources (links to our exports) -> Celery downloads + ES indexing
                                   -> portal dataset page, table preview, map preview, /1.4 API (https://mcod.local)
 
-  Browser (same-origin) -> our Next.js 16 (/mapa AED map, /schemat) -> src/proxy.ts -> Django -> PostgreSQL 18
+  Browser (same-origin) -> our Next.js 16 (/ "Najbliższy AED" map from demo location, /schemat) -> src/proxy.ts -> Django -> PostgreSQL 18
 ```
 
 ## Standard AED Schema ("wzorcowy zakres danych") — single source of truth
@@ -40,7 +40,7 @@
 - **`apps.core`**: Built-in `GET /api/health/` readiness check.
 - **`apps.aed`** (new):
   - `SourceDataset`: `kind` (`dane_gov_pl` / `osm`), `external_id` (dane.gov.pl dataset id), `title`, `publisher`, `url`, `license_name`, `harvested_at`.
-  - `SourceResource`: FK `SourceDataset`, `external_id`, `format`, `url`, `raw_file` (FileField, stored raw payload), `selected` (bool, chosen best format per dataset: GeoJSON > CSV > XLSX > JSON > XML), `parse_status`, `parse_error`, `record_count`, `coverage` (JSON: field -> filled ratio).
+  - `SourceResource`: FK `SourceDataset`, `external_id`, `format`, `url`, `raw` (BinaryField, stored raw payload — no media files, safe for the non-root prod container), `selected` (bool, chosen best format per dataset: GeoJSON > CSV > XLSX > JSON > XML), `parse_status`, `parse_error`, `record_count`, `coverage` (JSON: field -> filled ratio).
   - `SourceRecord`: FK `SourceResource`, `source_row_id`, `raw` (JSON original row), one column per standard schema field (normalized), FK `aed` (nullable, set by merge), `quality_flags` (JSON list).
   - `AED`: national merged record; one column per standard schema field; `id_aed` stable (e.g. `PL-AED-000123`); M2M via `SourceRecord.aed` gives provenance; `sources_count`.
   - Parsers: `apps/aed/parsers/` (`csv_generic.py` with delimiter/encoding sniffing, `xlsx.py`, `geojson.py`, `osm.py`) + `mappings.py` (header synonyms -> standard fields, plus per-source overrides, e.g. Marki: row-wrapped quoting and lat/lon swapped under lon/lat headers).
@@ -62,14 +62,21 @@ dane.gov.pl-compatible endpoints mimic the portal's JSON:API envelope (`data[]{i
 | `GET /api/1.4/datasets/{id}/resources`, `/api/1.4/resources/{id}` | `apps.aed` | Export resources (csv/json/geojson/xlsx) in dane.gov.pl resource shape | Public | T04 |
 | `GET /api/1.4/resources/{id}/data` | `apps.aed` | Rows as `type: "row"`, `attributes.col1..colN`, `meta.headers_map`, `meta.data_schema` | Public | T04 |
 | `GET /api/exports/aed.csv`, `.json`, `.geojson`, `.xlsx` | `apps.aed` | Machine-readable exports of merged dataset (CSV is UTF-8, `,`, numeric lat/lon for the fork map) | Public | T04 |
-| `GET /api/aed/?bbox=&q=` | `apps.aed` | Lightweight GeoJSON for our Next.js map | Public | T07 |
+| `GET /api/aed/?bbox=&q=` | `apps.aed` | Lightweight GeoJSON for our Next.js map (property contract below, DEC-008) | Public | T04/T07 |
+
+### `/api/aed/` map contract (DEC-008, consumed by T07)
+
+- `FeatureCollection` + `meta {count, generated_at, license}`; each feature `id` = `id_aed`, `geometry` Point `[lon, lat]`.
+- `properties`: `id_aed`, `nazwa`, `adres` (server-built display string or `null`), `miejscowosc`, `opis_lokalizacji`, `w_budynku` (bool/`null`), `pietro`, `dostep`, `godziny_dostepnosci`, `zabezpieczenie`, `status`, `dysponent`, `telefon_kontaktowy`, `data_aktualizacji`, `zrodla[] {nazwa, typ (dane_gov_pl|osm), url}`. Schema names + enum codes from `schema.py`; empty values are `null`.
+- The UI loads the full set once (no params) and filters client-side; `q` / `bbox` remain for API users. `GZipMiddleware` enabled so ~20k features stay ≈ 1 MB on the wire.
+- `/api/sources/` additionally exposes top-level `aed_count`, `updated_at` and `sources[].{id, title, kind, url, record_count}` for the landing counters.
 
 ## Frontend Routes & Modules (`frontend/`)
 
 | Route | Component / Type | Purpose | API Endpoints Used | Task |
 | --- | --- | --- | --- | --- |
-| `/` | `src/app/page.tsx` | Landing: project pitch + links to map, schema, API, fork | `GET /api/sources/` (counts) | T07 |
-| `/mapa` | `src/app/mapa/page.tsx` + client `AedMap` (Leaflet, clustered) | Map of all merged AEDs, marker popup with schema fields + source; accessible list alternative | `GET /api/aed/` | T07 |
+| `/` | `src/app/page.tsx` + client `AedFinder` (Leaflet, clustered) | Single page "Najbliższy AED" from the demo location (BCTW Bydgoszcz, DEC-010): nearest card, nearby list, map, data info | `GET /api/aed/`, `GET /api/sources/` | T07 |
+| `/mapa` | `src/app/mapa/page.tsx` | Redirect to `/` (DEC-010) | — | T07 |
 | `/schemat` | `src/app/schemat/page.tsx` | Standard schema table + downloads + per-source coverage | `GET /api/schema-standard/`, `GET /api/sources/` | T08 |
 
 ## dane.gov.pl Fork — `fork-config/` (tracked) + `dane-gov-pl/` (git-ignored); local first, then Hetzner (DEC-005)
@@ -82,7 +89,7 @@ dane.gov.pl-compatible endpoints mimic the portal's JSON:API envelope (`data[]{i
 
 ## Environment Variables & External Integrations
 
-- No new env vars for our app in MVP (public APIs, no keys). Constants in `apps/aed/harvest.py`: `DANE_API_URL=https://api.dane.gov.pl/1.4`, `OVERPASS_URL=https://overpass-api.de/api/interpreter`, timeout 60 s, 3 retries. If made configurable later, mirror in `.env.example`, `compose.yaml`, `compose.prod.yaml`.
+- Only optional new env var: `DANEGOV_FORK_URL` (server-side, landing link to the fork dataset; hidden when empty; T07 mirrors it in `.env.example`, `compose.yaml`, `compose.prod.yaml`). Public APIs, no keys. Constants in `apps/aed/harvest.py`: `DANE_API_URL=https://api.dane.gov.pl/1.4`, `OSM_PRIMARY_URL=https://openaedmap.org/api/v1/countries/PL.geojson` (daily OSM AED export; Overpass is the fallback — unreachable from the dev network on 2026-11-21), timeout 60 s, 3 retries. If made configurable later, mirror in `.env.example`, `compose.yaml`, `compose.prod.yaml`.
 - Local port conflicts with the fork: fork host ports for postgres/redis/rabbit/ES are reset in `fork-config/compose.override.yml`; our stack keeps `8000` (backend) and `3000` (frontend).
 - Map tiles: OpenStreetMap standard tiles with attribution (demo traffic only). OSM data: ODbL, attribution in exports metadata and map.
 

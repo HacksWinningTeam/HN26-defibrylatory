@@ -1,0 +1,199 @@
+{
+  "generated_at": "2026-11-21T19:21:32.590485+00:00",
+  "note": "Offline snapshot of harvested AED sources (demo fallback).",
+  "datasets": [
+    {
+      "kind": "dane_gov_pl",
+      "external_id": "4955",
+      "title": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+      "publisher": "Urząd Miasta Marki",
+      "url": "https://dane.gov.pl/pl/dataset/4955",
+      "api_url": "https://api.dane.gov.pl/1.4/datasets/4955",
+      "license_name": "CC BY 4.0",
+      "source_modified": "2025-07-10T12:13:16+00:00",
+      "resources": [
+        {
+          "external_id": "68353",
+          "title": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+          "format": "csv",
+          "url": "https://api.dane.gov.pl/media/resources/20250710/Defibrylator_GminaMiastoMarki_1.csv",
+          "content_type": "application/octet-stream",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": true,
+          "file": "dane_gov_pl_4955_68353.csv"
+        },
+        {
+          "external_id": "68355",
+          "title": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+          "format": "xlsx",
+          "url": "https://api.dane.gov.pl/media/resources/20250710/Defibrylator_GminaMiastoMarki_1.xlsx",
+          "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": false,
+          "file": "dane_gov_pl_4955_68355.xlsx"
+        }
+      ]
+    },
+    {
+      "kind": "dane_gov_pl",
+      "external_id": "3624",
+      "title": "Defibrylatory zlokalizowane w Mieście Krosno",
+      "publisher": "Urząd Miasta Krosna",
+      "url": "https://dane.gov.pl/pl/dataset/3624",
+      "api_url": "https://api.dane.gov.pl/1.4/datasets/3624",
+      "license_name": "CC0 1.0",
+      "source_modified": "2024-03-19T19:17:59+00:00",
+      "resources": [
+        {
+          "external_id": "54632",
+          "title": "Defibrylatory zlokalizowane w Mieście Krosno",
+          "format": "csv",
+          "url": "https://api.dane.gov.pl/media/resources/20240219/Defibrylator_jAmxQcp.csv",
+          "content_type": "application/octet-stream",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": true,
+          "file": "dane_gov_pl_3624_54632.csv"
+        }
+      ]
+    },
+    {
+      "kind": "dane_gov_pl",
+      "external_id": "39512",
+      "title": "Lokalizacja defibrylatorów (AED)",
+      "publisher": "Urząd m.st. Warszawy",
+      "url": "https://dane.gov.pl/pl/dataset/39512",
+      "api_url": "https://api.dane.gov.pl/1.4/datasets/39512",
+      "license_name": "CC BY 4.0",
+      "source_modified": "2026-06-01T08:00:08+00:00",
+      "resources": [
+        {
+          "external_id": "2512040",
+          "title": "Lokalizacja defibryzatorów (AED)",
+          "format": "json",
+          "url": "https://dane.um.warszawa.pl/pl/catalogue/7bc32ffc-c2ac-4d32-83c9-b6f7a0b38de8",
+          "content_type": "application/json",
+          "fetch_status": "ok",
+          "fetch_error": "Fetched via Warsaw API https://dane.um.warszawa.pl/api/action/get_scb_lokalizacja_defibrylatorow",
+          "selected": true,
+          "file": "dane_gov_pl_39512_2512040.json"
+        }
+      ]
+    },
+    {
+      "kind": "dane_gov_pl",
+      "external_id": "4581",
+      "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+      "publisher": "Urząd Miejski w Przemyślu",
+      "url": "https://dane.gov.pl/pl/dataset/4581",
+      "api_url": "https://api.dane.gov.pl/1.4/datasets/4581",
+      "license_name": "CC0 1.0",
+      "source_modified": "2024-11-06T06:42:45+00:00",
+      "resources": [
+        {
+          "external_id": "62092",
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "format": "xml",
+          "url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.gml",
+          "content_type": "application/octet-stream",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": false,
+          "file": "dane_gov_pl_4581_62092.xml"
+        },
+        {
+          "external_id": "62093",
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "format": "geojson",
+          "url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.geojson",
+          "content_type": "application/octet-stream",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": true,
+          "file": "dane_gov_pl_4581_62093.geojson"
+        },
+        {
+          "external_id": "62094",
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "format": "json",
+          "url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.json",
+          "content_type": "application/json",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": false,
+          "file": "dane_gov_pl_4581_62094.json"
+        },
+        {
+          "external_id": "62095",
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "format": "csv",
+          "url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.csv",
+          "content_type": "application/octet-stream",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": false,
+          "file": "dane_gov_pl_4581_62095.csv"
+        },
+        {
+          "external_id": "62424",
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "format": "xml",
+          "url": "https://api.dane.gov.pl/media/resources/20241120/1730818801_b50R6UVxPgoVdBbq.gml",
+          "content_type": "application/octet-stream",
+          "fetch_status": "duplicate",
+          "fetch_error": "Same content as resource #62092",
+          "selected": false,
+          "file": null
+        }
+      ]
+    },
+    {
+      "kind": "dane_gov_pl",
+      "external_id": "40593",
+      "title": "Zdrowie",
+      "publisher": "Urząd Miasta Legionowo",
+      "url": "https://dane.gov.pl/pl/dataset/40593",
+      "api_url": "https://api.dane.gov.pl/1.4/datasets/40593",
+      "license_name": "CC0 1.0",
+      "source_modified": "2026-09-21T08:31:31+00:00",
+      "resources": [
+        {
+          "external_id": "2625221",
+          "title": "Wykaz defibrylatorów AED wraz z ich lokalizacją w Legionowie.",
+          "format": "csv",
+          "url": "https://api.dane.gov.pl/media/resources/20260914/aed.csv",
+          "content_type": "application/octet-stream",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": true,
+          "file": "dane_gov_pl_40593_2625221.csv"
+        }
+      ]
+    },
+    {
+      "kind": "osm",
+      "external_id": "openaedmap-pl",
+      "title": "OpenStreetMap – defibrylatory AED w Polsce",
+      "publisher": "Współtwórcy OpenStreetMap (eksport OpenAEDMap)",
+      "url": "https://openaedmap.org/",
+      "api_url": "https://openaedmap.org/api/v1/countries/PL.geojson",
+      "license_name": "ODbL 1.0",
+      "source_modified": null,
+      "resources": [
+        {
+          "external_id": "pl-geojson",
+          "title": "AED w Polsce (GeoJSON)",
+          "format": "geojson",
+          "url": "https://openaedmap.org/api/v1/countries/PL.geojson",
+          "content_type": "application/geo+json; charset=utf-8",
+          "fetch_status": "ok",
+          "fetch_error": "",
+          "selected": true,
+          "file": "osm_openaedmap-pl_pl-geojson.geojson"
+        }
+      ]
+    }
+  ]
+}

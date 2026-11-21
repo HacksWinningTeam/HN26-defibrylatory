@@ -67,6 +67,27 @@
 - **Decision:** Added optional fields `numer_seryjny`, `data_instalacji`, `data_ostatniego_uzycia`, `data_waznosci_elektrod_pediatrycznych` and recommended `data_nastepnego_przegladu`; added `status` values `do_weryfikacji`, `skradziony`, `wycofany` (42 fields, 8 required). Not adopted: `what3words` (user decision), `accessCode` (security — open data; publish only `zabezpieczenie = szafka_na_kod`), `contactPerson` / `inspectorName` (personal data, RODO), nested `consumables[]` / `maintenanceLogs[]` (flattened to dates for tabular dane.gov.pl previews); serial number/manufacturer/model stay optional (no current dane.gov.pl source publishes them).
 - **Affected Docs & Tasks:** `backend/apps/aed/schema.py`, `docs/schema-aed.md`, `docs/deliverables/*`, T01.
 
+### `DEC-008` — T07 UI Design: `/api/aed/` Map Contract, Client-Side Filtering, Shared Primitives
+- **Date:** 2026-11-21 19:38
+- **Status:** Accepted (pending user approval of the T07 design)
+- **Context / New Info:** T07 per-task UI design needs exact properties for the map popup/list and landing counters; T04 only said "lightweight GeoJSON". Users are the public in an emergency (mobile, fast) and judges.
+- **Decision:** `/api/aed/` returns a FeatureCollection with `meta {count, generated_at, license}` and properties `id_aed, nazwa, adres (display string), miejscowosc, opis_lokalizacji, w_budynku, pietro, dostep, godziny_dostepnosci, zabezpieczenie, status, dysponent, telefon_kontaktowy, data_aktualizacji, zrodla[{nazwa, typ, url}]` (schema names/codes, empty = `null`). The UI loads the full set once and searches/filters (24/7, public) and sorts by distance (browser geolocation, optional) client-side; `q`/`bbox` stay for API users. Django `GZipMiddleware` enabled. `/api/sources/` exposes `aed_count`, `updated_at`, `sources[].{id,title,kind,url,record_count}`. New shared UI primitives: `EmergencyBanner` (112), `Badge`, warning colour tokens; AppShell rebranded to "Misja AED" with nav and full-bleed `/mapa`. Optional server env `DANEGOV_FORK_URL` for the landing link to the fork. Navigation = external OSM directions / `geo:` link only (no in-app routing).
+- **Affected Docs & Tasks:** `docs/03-architecture.md`, `docs/02-ui-system.md`, `docs/tasks/T07-aed-map-nextjs.md`, T03 (`/api/sources/` fields), T04 (`/api/aed/` properties + gzip).
+
+### `DEC-009` — Warsaw AED Data via Token-Protected City API (`WARSAW_API_TOKEN`)
+- **Date:** 2026-11-21 20:11
+- **Status:** Accepted
+- **Context / New Info:** User wants Warsaw AED data from dane.gov.pl. dane.gov.pl dataset 39512 only links to `dane.um.warszawa.pl/pl/catalogue/7bc32ffc-…` (HTML). The catalogue metadata API (`/api/datasets/{uuid}`) points to call examples: `POST https://dane.um.warszawa.pl/api/action/get_scb_lokalizacja_defibrylatorow` with header `Authorization: <token>` (free token from `dane.um.warszawa.pl/key-api`); without it HTTP 403. Data (Stołeczne Centrum Bezpieczeństwa, CC BY, daily) has rich fields: access description, 24/7 availability, public access, manufacturer, location description, address.
+- **Decision:** Harvester recognises Warsaw catalogue links, resolves the API action from the published call examples (fallback: known AED action) and POSTs with `WARSAW_API_TOKEN`. New env var mirrored in `.env.example`, `compose.yaml`, `compose.prod.yaml`, `settings.py` (secret: only in `.env`, never committed, never stored in DB). Without/with a rejected token the resource gets new status `requires_api_key` with an explanatory message (also a finding for the pitch: the dataset is listed on dane.gov.pl but not machine-readable without registration). Fetched Warsaw data is saved in the offline snapshot (CC BY).
+- **Affected Docs & Tasks:** `backend/apps/aed/harvest.py`, `models.py` (+ migration 0002), `.env.example`, `compose*.yaml`, `docs/03-architecture.md`, T02, T03 (Warsaw parser).
+
+### `DEC-010` — T07 Design v2: Very Simple UI, Location Fixed to BCTW Bydgoszcz
+- **Date:** 2026-11-21 20:41
+- **Status:** Accepted (refines DEC-008 UI parts; `/api/aed/` contract unchanged)
+- **Context / New Info:** User asked to hardcode the current location to Bydgoszcz exhibition centre and to make the UI very simple and highly visible.
+- **Decision:** Single page `/` "Najbliższy AED": big 112 banner, "Jesteś tutaj: Bydgoskie Centrum Targowo-Wystawiennicze, Bydgoszcz (lokalizacja demonstracyjna)" at 53.170719, 18.047651 (OSM Nominatim), one big card for the nearest AED (distance, walking time "w linii prostej", ≤ 3 badges, "PROWADŹ DO AED" OSM walking route), rows #2–#5, map with numbered pins 1–5 + clustered rest, "Skąd są te dane?" section (counts, sources, schema/exports/API/fork links). Removed: search, filters, browser geolocation (also avoids the https requirement on the plain-http Hetzner deploy), map/list toggle. `/mapa` redirects to `/`. Optional `?lat=&lon=&miejsce=` override. Answers to v1 open questions: load all AEDs once (yes), fork link via `DANEGOV_FORK_URL` (yes), drop health card (yes), single "Prowadź" link (no `geo:`).
+- **Affected Docs & Tasks:** `docs/tasks/T07-aed-map-nextjs.md`, `docs/03-architecture.md` (frontend routes), `docs/02-ui-system.md`.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`
