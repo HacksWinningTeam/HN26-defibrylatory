@@ -112,6 +112,14 @@ function buildPopup(
       t,
     ),
   );
+  // Placeholder: reporting is not implemented yet, so the button intentionally does nothing.
+  const report = el(
+    "button",
+    "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border-2 border-[var(--color-accent)] bg-[var(--color-surface)] px-4 font-bold text-[var(--color-accent-text)]",
+    `⚠ ${t("Report a problem")}`,
+  );
+  report.type = "button";
+  root.append(report);
   if (props.zrodla.length > 0) {
     const sources = el("p", "text-sm", `${t("Sources")}: `);
     props.zrodla.forEach((source, index) => {

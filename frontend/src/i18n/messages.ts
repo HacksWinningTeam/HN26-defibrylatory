@@ -128,6 +128,8 @@ export const polish = {
     "Prowadź do AED",
   "Navigate":
     "Prowadź",
+  "Report a problem":
+    "Zgłoś problem",
   "(opens in a new tab)":
     "(otwiera się w nowej karcie)",
   "More information":
