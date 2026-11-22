@@ -1,0 +1,91 @@
+<!-- fork-config/frontend/home.component.html: upstream src/app/pages/home/home.component.html + AEDane banner;
+     bind-mounted over the upstream file by fork-config/compose.override.yml (never edit dane-gov-pl/ directly). -->
+<!-- HERO TEXT -->
+<section class="home-section home-section--hero" id="hero">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 col-md-8 offset-md-2">
+        <h1>
+          {{ 'Slogan' | translate }}
+        </h1>
+        <h2>
+          {{ 'SloganDescription' | translate }}
+        </h2>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH and SUGGESTIONS -->
+<div class="container">
+  <div class="row">
+    <div class="col-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2 col-xl-6 offset-xl-3 mb-sm-5 pb-5">
+      <app-search-suggest
+        [apiModels]="[
+          apiModel.SHOWCASE,
+          apiModel.NEWS,
+          apiModel.DATASET,
+          apiModel.INSTITUTION,
+          apiModel.KNOWLEDGE_BASE,
+          apiModel.RESOURCE,
+        ]"></app-search-suggest>
+    </div>
+  </div>
+</div>
+
+<!-- AEDANE BANNER (mcod.aed, T20 / DEC-021): image served by the plugin through the portal's /api proxy -->
+<section class="container mb-5" aria-label="AEDane – defibrylatory AED w dane.gov.pl">
+  <a
+    href="/api/1.4/standards/aed-pl/dataset"
+    class="d-block"
+    style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12)">
+    <img
+      src="/api/1.4/aed/banner.png"
+      width="1860"
+      height="240"
+      style="display: block; width: 100%; height: auto"
+      alt="AEDane – Pomoc zaczyna się od informacji. Udostępnij zbiór danych na dane.gov.pl – przejdź do zbioru Defibrylatory AED – zbiór ogólnopolski" />
+  </a>
+</section>
+
+<!-- api notifications -->
+<div class="container" *ngIf="apiError">
+  <app-notifications></app-notifications>
+</div>
+
+<!-- SERVICE ALERT -->
+<home-service-alert></home-service-alert>
+
+<!-- BANNER - CMS-SECTION -->
+<cms-block2 className="text-center" [widgetsSubject]="cmsSectionOverSearchFieldCb" [isFullWidth]="true"></cms-block2>
+
+<!-- CATEGORIES -->
+<home-categories [items]="categories"></home-categories>
+
+<!-- STATISTICS -->
+<home-stats [stats]="stats"></home-stats>
+
+<!-- INSTITUTIONS -->
+<home-institutions [items]="institutions"></home-institutions>
+
+<!-- CMS SECTION -->
+<cms-block2 class="pt-3 pb-3" [widgetsSubject]="cmsSectionOverLatestNewsCb" [isFullWidth]="true"></cms-block2>
+
+<!-- HOME: APPS -->
+<home-applications [applications]="applications"></home-applications>
+<div class="home-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8">
+        <!-- NEWS -->
+        <home-news></home-news>
+      </div>
+      <div class="col-lg-4 flex-column">
+        <!-- FACEBOOK NEWS -->
+        <app-home-facebook-news
+          [facebookWidget]="cmsSectionFacebookBanerCb"
+          class="h-100 d-flex flex-column"></app-home-facebook-news>
+      </div>
+    </div>
+  </div>
+</div>

@@ -170,6 +170,13 @@
 - **Decision:** When a source resource passes its standard and is published (Celery `validate_resource_standard_task`), the plugin queues the aggregation of that standard automatically (15 s delay, one queued run per standard per 45 s via the Redis cache; never from the common dataset's own files; switch `AED_AUTO_AGGREGATION`, default on). Runs show `triggered_by = "auto: zasób N zgodny ze standardem"`; the resource admin page shows "Zbiór zbiorczy … odświeżony automatycznie … (agregacja #N)". Demo files: before/after pairs for Krosno (`docs/demo/samples/{aed,zlobki}-krosno-nowe-{bledny,poprawiony}.csv`). The demo video (T19) follows this flow.
 - **Affected Docs & Tasks:** T19, `docs/demo-script.md`, `fork-config/mcod_aed/{resource_validation,tasks,integration}.py`, `fork-config/local.py`.
 
+### `DEC-021` — UI Polish: AEDane Banner on the Portal Home Page + Map-First Public Page
+- **Date:** 2026-11-22 06:40
+- **Status:** Accepted
+- **Context / New Info:** User: add `docs/inputs/ui/baner.png` (AEDane – "Pomoc zaczyna się od informacji. Udostępnij zbiór danych na dane.gov.pl", 1860×240) to the main page of the dane.gov.pl fork; simplify the public Next.js page — remove most elements, keep a big map with the nearest AED and all other AEDs clickable. ~2 h 20 min to code freeze.
+- **Decision:** (1) Portal: the banner is served by the plugin (`GET /1.4/aed/banner.png`, reached by the portal through its own `/api` proxy) and shown under the search box of the home page via a patched copy of `home.component.html` kept in `fork-config/frontend/` and bind-mounted over the upstream file (no edit in `dane-gov-pl/`); it links to the AED common dataset (`GET /1.4/standards/aed-pl/dataset` → 302 to the portal dataset page). (2) Next.js: "/" becomes map-first — full-height map, one floating "Najbliższy AED" card (distance, name, access, Prowadź, 112), every AED pin clickable with its details popup; removed: emergency banner block, location box, list of AEDs 2–5, data/API section and footer links (attribution stays on the map). No backend/API change.
+- **Affected Docs & Tasks:** new T20 (portal banner), new T21 (map-first page, UI design gate), `docs/05-plan.md`, `fork-config/compose.override.yml`.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`

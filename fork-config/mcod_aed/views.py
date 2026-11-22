@@ -1,4 +1,6 @@
 """Falcon views of `mcod.aed` (registered under /1.4 by `integration.register_routes`)."""
+import os
+
 import falcon
 
 from mcod.aed import jsonapi, schema, schema_export
@@ -483,4 +485,42 @@ ROUTES += [
     ("/standards/{code}/table-schema.json", StandardSchemaFileView("table")),
     ("/standards/{code}/validate", AedValidateView()),
     ("/standards/{code}/sources", AedSourcesView()),
+]
+
+
+BANNER_PATH = os.path.join(os.path.dirname(__file__), "static", "baner.png")
+
+
+class BannerView:
+    """GET /1.4/aed/banner.png — AEDane banner shown on the portal home page (T20, DEC-021)."""
+
+    def on_get(self, req, resp, **kwargs):
+        with open(BANNER_PATH, "rb") as fh:
+            resp.data = fh.read()
+        resp.status = falcon.HTTP_200
+        resp.content_type = "image/png"
+        resp.set_header("Cache-Control", "public, max-age=86400")
+
+
+class StandardDatasetView:
+    """GET /1.4/standards/{code}/dataset — 302 to the standard's common dataset page in the portal."""
+
+    def on_get(self, req, resp, code=None, **kwargs):
+        from django.conf import settings
+
+        from mcod.datasets.models import Dataset
+
+        standard = _standard_or_404(req, resp, code)
+        if standard is None:
+            return
+        dataset = Dataset.raw.filter(pk=standard.target_dataset_id, is_removed=False).first()
+        target = "{}/pl/dataset/{},{}".format(settings.BASE_URL, dataset.pk, dataset.slug) if dataset \
+            else "{}/pl/dataset?q={}".format(settings.BASE_URL, standard.code)
+        resp.status = falcon.HTTP_302
+        resp.set_header("Location", target)
+
+
+ROUTES += [
+    ("/aed/banner.png", BannerView()),
+    ("/standards/{code}/dataset", StandardDatasetView()),
 ]

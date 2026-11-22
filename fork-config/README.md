@@ -226,3 +226,9 @@ Disabled: discourse(+sidekiq) (private registry image), flower, rdfdb (`USE_RDF_
 - Wagtail CMS is empty, so CMS-driven parts of the portal (privacy-policy modal text, footer, news) are blank.
 - The self-signed cert covers mcod.local/api/admin/cms only; `aed.mcod.local` shows a name mismatch in a
   browser (the fork itself downloads with `verify=False`, so this does not matter for resource links).
+
+Portal home banner (T20, DEC-021): `fork-config/frontend/home.component.html` (upstream template + AEDane banner) is
+bind-mounted over `frontend_latest/src/app/pages/home/home.component.html` by `compose.override.yml`; the image is
+served by the plugin (`/1.4/aed/banner.png`, file `mcod_aed/static/baner.png`) and the link goes through
+`/1.4/standards/aed-pl/dataset` (302 to the common dataset). On Hetzner, re-run `hetzner/apply-hostnames.sh <ip>`
+after every rsync of `fork-config/`.

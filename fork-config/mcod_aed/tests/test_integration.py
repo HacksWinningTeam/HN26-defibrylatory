@@ -43,6 +43,16 @@ class SchemaApiTests(unittest.TestCase):
         self.assertEqual(len(data["attributes"]["groups"]), 6)
         self.assertIn("json_schema", data["attributes"]["downloads"])
 
+    def test_banner_and_common_dataset_redirect(self):
+        resp = self.client.simulate_get("/1.4/aed/banner.png")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers["content-type"], "image/png")
+        self.assertTrue(resp.content.startswith(b"\x89PNG"))
+        resp = self.client.simulate_get("/1.4/standards/aed-pl/dataset")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/pl/dataset", resp.headers["location"])
+        self.assertEqual(self.client.simulate_get("/1.4/standards/nope/dataset").status_code, 404)
+
     def test_unversioned_path_also_works(self):
         self.assertEqual(self.client.simulate_get("/aed/schema").status_code, 200)
 

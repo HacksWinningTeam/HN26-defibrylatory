@@ -57,6 +57,13 @@ Second standard "Żłobki i kluby dziecięce" proves the engine is not AED-only.
 | `T18` | Generic aggregation + nursery datasets from dane.gov.pl | Backend (fork) | No | `T17` | 1 h | `VERIFIED` | [T18](tasks/T18-generic-aggregation-nurseries.md) |
 | `T19` | Universal standards on the server + demo script | Infra | No | `T18` | 0.5 h | `VERIFIED` | [T19](tasks/T19-universal-demo-server.md) |
 
+## Milestone 6 — UI Polish (DEC-021)
+
+| ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `T20` | AEDane banner on the portal home page (plugin-served image, patched home template) | Frontend (fork) | No | `T19` | 0.5 h | `VERIFIED` | [T20](tasks/T20-portal-home-banner.md) |
+| `T21` | Map-first public page: big map, nearest-AED card, all AEDs clickable | Frontend | Yes | `T15` | 1 h | `VERIFIED` | [T21](tasks/T21-map-first-page.md) |
+
 ## Milestone 4 — Demo Polish & End-to-End Readiness
 
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
