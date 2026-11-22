@@ -14,6 +14,14 @@ class DataStandard(models.Model):
     version = models.CharField("wersja", max_length=20)
     description = models.TextField("opis", blank=True)
     json_schema = JSONField("JSON Schema", default=dict, blank=True)
+    # DEC-019: the standard as data (see spec.py); filled from standards/*.json by `aed_load_standard`
+    fields = JSONField("pola (definicja)", default=list, blank=True,
+                       help_text="Lista pól: name, label, type, obligation, allowed_values, pattern, minimum, "
+                                 "maximum, max_length, synonyms, derivable.")
+    merge = JSONField("reguła scalania", default=dict, blank=True,
+                      help_text='{"strategy": "key", "keys": [["regon", "nazwa"], ...]} albo {"strategy": "geo"}')
+    discovery = JSONField("wyszukiwanie w dane.gov.pl", default=dict, blank=True)
+    publish = JSONField("publikacja zbioru zbiorczego", default=dict, blank=True)
     target_dataset = models.ForeignKey(
         "datasets.Dataset",
         verbose_name="zbiór zbiorczy",
@@ -42,6 +50,11 @@ class DataStandard(models.Model):
 
     def as_api_dict(self):
         return {"code": self.code, "name": self.name, "version": self.version}
+
+    def spec(self):
+        from mcod.aed.spec import StandardSpec
+
+        return StandardSpec.from_model(self)
 
 
 class DatasetStandard(models.Model):

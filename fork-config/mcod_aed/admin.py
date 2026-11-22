@@ -1,7 +1,8 @@
+from django import forms
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 
 from mcod.aed.models import (
     AedDevice,
@@ -13,34 +14,101 @@ from mcod.aed.models import (
 )
 
 
-def queue_aggregation(request):
+def queue_aggregation(request, standard):
+    """Queue "Agregacja" for exactly this standard (never another one)."""
+    from mcod.aed.aggregate import supports_aggregation
     from mcod.aed.tasks import aggregate_task
 
+    if not supports_aggregation(standard):
+        messages.warning(request, "Agregacja dla standardu „{}” nie jest jeszcze dostępna (silnik ogólny – zadanie "
+                                  "T18). Nic nie zostało uruchomione.".format(standard.name))
+        return False
     who = getattr(request.user, "email", "admin")
-    aggregate_task.apply_async(kwargs={"triggered_by": "admin: {}".format(who)})
-    messages.success(request, "Agregacja AED została uruchomiona w tle – odśwież listę agregacji za chwilę "
-                              "(zwykle ok. 30 s).")
+    aggregate_task.apply_async(kwargs={"triggered_by": "admin: {}".format(who), "standard_code": standard.code})
+    messages.success(request, "Agregacja „{}” została uruchomiona w tle – odśwież listę agregacji za chwilę "
+                              "(zwykle ok. 30 s).".format(standard.name))
+    return True
+
+
+class DataStandardForm(forms.ModelForm):
+    class Meta:
+        model = DataStandard
+        fields = "__all__"
+
+    def clean(self):
+        data = super().clean()
+        if self.instance.code == "aed-pl" or data.get("code") == "aed-pl":
+            return data  # defined in code (schema.py); fields are a read-only mirror
+        from mcod.aed.spec import StandardDefinitionError, StandardSpec
+
+        try:
+            spec = StandardSpec(data.get("code") or "", data.get("name") or "", data.get("version") or "1.0.0",
+                                data.get("description") or "", data.get("fields") or [], data.get("merge"),
+                                data.get("discovery"), data.get("publish"))
+        except StandardDefinitionError as exc:
+            raise forms.ValidationError(str(exc))
+        self.cleaned_data["json_schema"] = spec.json_schema()
+        return data
 
 
 @admin.register(DataStandard)
 class DataStandardAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "version", "target_dataset", "max_invalid_ratio", "is_active", "datasets_count",
-                    "aggregate_button")
+    form = DataStandardForm
+    list_display = ("name", "code", "version", "fields_count", "merge_rule", "target_dataset", "max_invalid_ratio",
+                    "is_active", "datasets_count", "aggregate_button")
     actions = ["run_aggregation"]
-    readonly_fields = ("json_schema", "created", "modified")
-    fields = (
-        "name",
-        "code",
-        "version",
-        "description",
-        "target_dataset",
-        "max_invalid_ratio",
-        "is_active",
-        "json_schema",
-        "created",
-        "modified",
-    )
+
+    def get_readonly_fields(self, request, obj=None):
+        base = ["fields_table", "json_schema", "created", "modified"]
+        if obj is not None and obj.code == "aed-pl":
+            base += ["code", "fields", "merge", "discovery", "publish"]
+        return base
+
+    def get_fields(self, request, obj=None):
+        return ["name", "code", "version", "description", "fields_table", "target_dataset", "max_invalid_ratio",
+                "is_active", "merge", "discovery", "publish", "fields", "json_schema", "created", "modified"]
+
     raw_id_fields = ("target_dataset",)
+
+    def save_model(self, request, obj, form, change):
+        if "json_schema" in form.cleaned_data and obj.code != "aed-pl":
+            obj.json_schema = form.cleaned_data["json_schema"]
+        super().save_model(request, obj, form, change)
+
+    def fields_count(self, obj):
+        return len(obj.fields or [])
+
+    fields_count.short_description = "pola"
+
+    def merge_rule(self, obj):
+        merge = obj.merge or {}
+        if merge.get("strategy") == "key":
+            return "klucz: " + " | ".join("+".join(k) for k in merge.get("keys", []))
+        if merge.get("strategy") == "geo":
+            return "odległość ≤ {} m".format(merge.get("distance_m", 25))
+        return merge.get("strategy", "-")
+
+    merge_rule.short_description = "scalanie"
+
+    def fields_table(self, obj):
+        if obj is None or not obj.fields:
+            return "-"
+        rows = format_html_join(
+            "",
+            "<tr><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            (
+                (f["name"], f.get("label", ""), f.get("type", ""), f.get("obligation", ""),
+                 ", ".join(v["value"] for v in f.get("allowed_values", [])) or f.get("pattern") or "",
+                 ", ".join(f.get("synonyms", [])))
+                for f in obj.fields
+            ),
+        )
+        return format_html(
+            '<table class="table table-condensed"><thead><tr><th>pole</th><th>nazwa</th><th>typ</th>'
+            "<th>wymagalność</th><th>dozwolone / wzorzec</th><th>inne akceptowane nazwy kolumn</th></tr></thead>"
+            "<tbody>{}</tbody></table>", rows)
+
+    fields_table.short_description = "pola standardu"
 
     def datasets_count(self, obj):
         return obj.dataset_links.count()
@@ -54,7 +122,8 @@ class DataStandardAdmin(admin.ModelAdmin):
     aggregate_button.short_description = "agregacja"
 
     def run_aggregation(self, request, queryset):
-        queue_aggregation(request)
+        for standard in queryset:
+            queue_aggregation(request, standard)
 
     run_aggregation.short_description = "Uruchom agregację do zbioru zbiorczego"
 
@@ -63,8 +132,13 @@ class DataStandardAdmin(admin.ModelAdmin):
                      name="aed_datastandard_aggregate")] + super().get_urls()
 
     def aggregate_view(self, request, pk):
-        queue_aggregation(request)
-        return HttpResponseRedirect(reverse("admin:aed_aedimportrun_changelist"))
+        standard = DataStandard.objects.filter(pk=pk).first()
+        if standard is None:
+            messages.error(request, "Nie ma takiego standardu.")
+            return HttpResponseRedirect(reverse("admin:aed_datastandard_changelist"))
+        if queue_aggregation(request, standard):
+            return HttpResponseRedirect(reverse("admin:aed_aedimportrun_changelist"))
+        return HttpResponseRedirect(reverse("admin:aed_datastandard_changelist"))
 
 
 @admin.register(DatasetStandard)

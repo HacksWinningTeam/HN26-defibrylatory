@@ -203,12 +203,20 @@ def _adopt_existing_resources(dataset, titles_by_ext):
             Resource.raw.filter(pk=old.pk).update(ext_ident=ext)
 
 
+def supports_aggregation(standard):
+    """Standards the aggregation engine can run today: aed-pl (verified AED engine); the generic engine for
+    data-defined standards comes with T18. Test standards without a data definition use the AED engine."""
+    return standard.code == AED_STANDARD_CODE or not standard.fields
+
+
 def run_aggregation(triggered_by="command", publish=True, standard=None):
     from mcod.aed.models import AedDevice, AedImportRun, AedSourceRecord, DataStandard
     from mcod.aed.standards import ensure_aed_standard
 
     if standard is None:
         standard = DataStandard.objects.filter(code=AED_STANDARD_CODE).first() or ensure_aed_standard()
+    if not supports_aggregation(standard):
+        raise ValueError("Agregacja standardu {} nie jest jeszcze dostępna (T18).".format(standard.code))
     run = AedImportRun.objects.create(standard=standard, triggered_by=triggered_by[:100])
     try:
         resources = source_resources(standard)

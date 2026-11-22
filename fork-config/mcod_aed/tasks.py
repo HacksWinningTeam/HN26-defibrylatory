@@ -51,11 +51,13 @@ def connect_upstream_hooks():
 
 
 @extended_shared_task(ignore_result=True, name="mcod.aed.tasks.aggregate_task")
-def aggregate_task(triggered_by="celery"):
-    """Run "Agregacja AED" in the background (admin button)."""
+def aggregate_task(triggered_by="celery", standard_code="aed-pl"):
+    """Run the aggregation of one standard in the background (admin button)."""
     from mcod.aed.aggregate import run_aggregation
+    from mcod.aed.models import DataStandard
 
-    return run_aggregation(triggered_by=triggered_by).pk
+    standard = DataStandard.objects.get(code=standard_code)
+    return run_aggregation(triggered_by=triggered_by, standard=standard).pk
 
 
 @extended_shared_task(ignore_result=True, name="mcod.aed.tasks.configure_national_csv_task")
