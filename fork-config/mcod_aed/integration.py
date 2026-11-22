@@ -26,6 +26,10 @@ def install():
         _safe(patch_dataset_api)
     if component == "admin":
         _safe(patch_dataset_admin)
+        _safe(patch_resource_form)
+        _safe(patch_resource_admin_messages)
+    if component == "celery":
+        _safe(connect_celery_hooks)
 
 
 def _safe(hook):
@@ -156,14 +160,146 @@ def patch_dataset_admin():
     _installed.add("dataset_admin")
 
 
-def save_dataset_standard(dataset, standard):
-    """Set (or clear with None) the 'Standard danych' of a dataset."""
+def save_dataset_standard(dataset, standard, revalidate=True):
+    """Set (or clear with None) the 'Standard danych' of a dataset; re-validate its resources on change."""
     from mcod.aed.models import DatasetStandard
 
+    current = DatasetStandard.objects.filter(dataset_id=dataset.pk).first()
     if standard is None:
-        DatasetStandard.objects.filter(dataset_id=dataset.pk).delete()
+        if current:
+            current.delete()
         return None
     link, _ = DatasetStandard.objects.update_or_create(
         dataset_id=dataset.pk, defaults={"standard": standard}
     )
+    if revalidate and (current is None or current.standard_id != standard.pk):
+        from mcod.aed.resource_validation import queue_dataset_validation
+
+        queue_dataset_validation(dataset.pk)
     return link
+
+
+# --- Automatic validation hooks (T14, DEC-015) ----------------------------------------------------
+
+
+def connect_celery_hooks():
+    """celery: after the portal's resource/file validation tasks, validate against the standard."""
+    if "celery" in _installed:
+        return
+    from mcod.aed.tasks import connect_upstream_hooks
+
+    connect_upstream_hooks()
+    _installed.add("celery")
+
+
+def patch_resource_form():
+    """admin: refuse to publish a resource whose data fails its dataset's standard (blocking)."""
+    if "resource_form" in _installed:
+        return
+    from django import forms
+
+    from mcod.resources import forms as resource_forms
+
+    form_class = resource_forms.ResourceForm
+    original_clean = form_class.clean
+
+    def clean(self):
+        data = original_clean(self)
+        try:
+            messages = standard_errors_for_form(self, data)
+        except Exception:  # never break the admin because of the plugin
+            logger.exception("mcod.aed: resource form validation failed")
+            messages = []
+        if messages:
+            # attached to the file field so the admin shows it next to the upload (not as "__all__")
+            self.add_error("file" if "file" in self.fields else None, forms.ValidationError(messages))
+        return data
+
+    form_class.clean = clean
+    _installed.add("resource_form")
+
+
+def standard_errors_for_form(form, data):
+    """Messages that block saving a published resource of a dataset with a standard ([] = OK)."""
+    from mcod.aed import resource_validation, validation
+    from mcod.aed.models import ResourceStandardValidation
+    from mcod.aed.standards import get_dataset_standard
+
+    if data is None or data.get("status", getattr(form.instance, "status", None)) != "published":
+        return []
+    dataset = data.get("dataset") or getattr(form.instance, "dataset", None)
+    if dataset is None or not getattr(dataset, "pk", None):
+        return []
+    standard = get_dataset_standard(dataset.pk)
+    if standard is None or not standard.is_active:
+        return []
+    upload = data.get("file")
+    header = "Dane nie spełniają standardu „{}” – zasobu nie można opublikować. Popraw plik albo zapisz zasób jako szkic.".format(standard.name)
+    if upload and hasattr(upload, "read"):
+        position = upload.tell() if hasattr(upload, "tell") else 0
+        raw = upload.read()
+        upload.seek(position)
+        try:
+            report = validation.validate_bytes(
+                raw, filename=getattr(upload, "name", None), max_invalid_ratio=standard.max_invalid_ratio
+            )
+        except validation.ValidationInputError as exc:
+            return [header, str(exc)]
+        if report["blocking"]:
+            return [header] + resource_validation.summarize_for_form(report)
+        return []
+    # No new file: publishing a resource that is currently blocked is refused too.
+    if form.instance is not None and form.instance.pk:
+        stored = ResourceStandardValidation.objects.filter(resource_id=form.instance.pk, blocking=True).first()
+        if stored:
+            return [header] + list(stored.blocking_reasons) + [
+                "wiersz {}: {}".format(e["row"], e["message"]) for e in stored.errors[:10]
+            ]
+    return []
+
+
+def patch_resource_admin_messages():
+    """admin: on a resource page of a standard dataset show the stored validation result."""
+    if "resource_admin_messages" in _installed:
+        return
+    from django.contrib import admin, messages
+
+    from mcod.resources.models import Resource
+
+    model_admin = admin.site._registry.get(Resource)
+    if model_admin is None:
+        return
+    admin_class = type(model_admin)
+    original_change_view = admin_class.change_view
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        if request.method == "GET":
+            try:
+                add_validation_message(request, object_id)
+            except Exception:  # pragma: no cover
+                logger.exception("mcod.aed: validation message failed")
+        return original_change_view(self, request, object_id, form_url, extra_context)
+
+    admin_class.change_view = change_view
+    _installed.add("resource_admin_messages")
+
+
+def add_validation_message(request, object_id):
+    from django.contrib import messages
+
+    from mcod.aed.models import ResourceStandardValidation
+
+    obj = ResourceStandardValidation.objects.select_related("standard").filter(resource_id=object_id).first()
+    if obj is None:
+        return
+    link = "/1.4/resources/{}/standard-validation".format(object_id)
+    text = "Standard „{}”: {} – wierszy {}, błędnych {}. Raport: API {}".format(
+        obj.standard.name, obj.get_status_display(), obj.rows_total, obj.rows_invalid, link)
+    if obj.blocking:
+        reasons = " ".join(obj.blocking_reasons)
+        errors = "; ".join("wiersz {}: {}".format(e["row"], e["message"]) for e in obj.errors[:3])
+        messages.error(request, "ZASÓB ZABLOKOWANY (szkic). {} {} {}".format(text, reasons, errors))
+    elif obj.status == obj.STATUS_VALID:
+        messages.success(request, text)
+    else:
+        messages.warning(request, text)

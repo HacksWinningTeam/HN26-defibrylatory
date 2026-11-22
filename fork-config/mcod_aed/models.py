@@ -83,6 +83,8 @@ class ResourceStandardValidation(models.Model):
     standard_version = models.CharField(max_length=20)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     blocking = models.BooleanField(default=False)
+    blocking_reasons = JSONField(default=list, blank=True)
+    data_format = models.CharField(max_length=20, blank=True)
     rows_total = models.PositiveIntegerField(default=0)
     rows_invalid = models.PositiveIntegerField(default=0)
     column_mapping = JSONField(default=dict, blank=True)
@@ -97,3 +99,23 @@ class ResourceStandardValidation(models.Model):
 
     def __str__(self):
         return "{}: {}".format(self.resource_id, self.status)
+
+    def as_api_attributes(self):
+        return {
+            "resource_id": self.resource_id,
+            "standard": self.standard.as_api_dict(),
+            "standard_version": self.standard_version,
+            "status": self.status,
+            "status_label": self.get_status_display(),
+            "valid": self.status == self.STATUS_VALID,
+            "blocking": self.blocking,
+            "blocking_reasons": self.blocking_reasons,
+            "format": self.data_format or None,
+            "rows_total": self.rows_total,
+            "rows_invalid": self.rows_invalid,
+            "column_mapping": self.column_mapping,
+            "coverage": self.coverage,
+            "errors": self.errors,
+            "warnings": self.warnings,
+            "validated_at": self.validated_at.strftime("%Y-%m-%dT%H:%M:%SZ") if self.validated_at else None,
+        }

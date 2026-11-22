@@ -225,6 +225,26 @@ def normalize_row(row: RawRow, ctx: SourceContext) -> Normalized:
         if value:
             data[standard] = value
 
+    # Columns already named like the standard (files made from the template) are taken as-is
+    # (typed) — the synonym table above only covers fields seen in legacy sources (T14).
+    for name in FIELD_NAMES:
+        if name in ("szerokosc_geograficzna", "dlugosc_geograficzna") or name in data:
+            continue
+        raw_value = _clean(props_n.get(name))
+        if not raw_value:
+            continue
+        spec = FIELDS_BY_NAME[name]
+        if spec.type == "boolean":
+            parsed = _bool_pl(raw_value)
+            if parsed is not None:
+                data[name] = parsed
+        elif spec.type == "number":
+            parsed_number = _to_float(raw_value)
+            if parsed_number is not None:
+                data[name] = parsed_number
+        else:
+            data[name] = raw_value
+
     # Full address string (Krosno, Marki) → TERYT-style parts, without overwriting.
     for key in ADDRESS_KEYS:
         if props_n.get(key):

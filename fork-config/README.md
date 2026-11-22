@@ -61,6 +61,13 @@ all hooks are applied from `AedConfig.ready()` (`integration.py`), scoped by the
 | `data_standard` field on `DatasetApiAttrs` | api | `{code,name,version}` or `null` in `/1.4/datasets` and `/1.4/datasets/{id}` |
 | wrap `DatasetAdminMixin.form` / `get_fieldsets` / `save_model` | admin | "Standard danych" select on the dataset *General* tab → `DatasetStandard` |
 
+| wrap `ResourceForm.clean` | admin | publishing a resource of a standard dataset with blocking errors is refused (errors at the file field) |
+| message on resource change page | admin | stored validation result (green / yellow / red "ZASÓB ZABLOKOWANY") |
+| `task_postrun` of the portal's resource/file validation tasks → `mcod.aed.tasks.validate_resource_standard_task` | celery | every resource of a standard dataset is validated after processing; blocking → `draft` |
+
+Validation API (T14): `POST /1.4/aed/validate` (multipart `file`, raw body, or JSON `{"url"}` / `{"resource_id"}`; `?strict=true`), `GET` = help;
+`GET /1.4/resources/{id}/standard-validation` = stored result. Samples: `docs/demo/samples/*.csv`.
+
 Models: `DataStandard` (seeded `aed-pl` v1.0.0, `max_invalid_ratio` 0.2, admin *Standardy danych*),
 `DatasetStandard`, `ResourceStandardValidation` (filled from T14). Code changes reload automatically in
 api/admin; restart celery (`docker restart mcod-celery`). New migrations:
