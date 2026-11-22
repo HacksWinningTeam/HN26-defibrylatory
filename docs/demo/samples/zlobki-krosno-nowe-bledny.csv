@@ -1,0 +1,4 @@
+id_placowki,nazwa,typ,podmiot_prowadzacy,miejscowosc,ulica,nr_budynku,kod_pocztowy,liczba_miejsc,telefon,dostosowany_dla_niepelnosprawnych,data_aktualizacji,zrodlo
+KROSNO-ZL-DEMO-1,,zlobek,Gmina Miasto Krosno (demo),Krosno,ul. Lwowska,10,38-400,75,+48 13 000 00 00,true,2026-11-22,Nowy plik Krosna (demo)
+KROSNO-ZL-DEMO-2,Klub Dziecięcy „Motylek” (demo),przedszkole,Gmina Miasto Krosno (demo),Krosno,ul. Bieszczadzka,3,38-400,dużo,+48 13 000 00 01,false,2026-11-22,Nowy plik Krosna (demo)
+KROSNO-ZL-DEMO-3,Żłobek „Pod Jabłonią” (demo),zlobek,Gmina Miasto Krosno (demo),Krosno,ul. Korczyńska,22,38400,48,+48 13 000 00 02,true,22/11/2026,Nowy plik Krosna (demo)

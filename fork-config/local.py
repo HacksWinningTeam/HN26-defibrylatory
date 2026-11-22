@@ -71,7 +71,10 @@ RESOURCES_MEDIA_ROOT = str(ROOT_DIR.path(MEDIA_ROOT, "resources"))
 SHOWCASES_MEDIA_ROOT = str(ROOT_DIR.path(MEDIA_ROOT, "showcases"))
 
 SESSION_COOKIE_NAME = "local_sessionid"
-SESSION_COOKIE_DOMAIN = "mcod.local"
+# from the environment so the public deployment (sslip.io hostnames, T10) gets a matching cookie domain
+SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN", default="mcod.local")  # noqa: F405
+# mcod.aed: a source file that passes its standard refreshes the common dataset automatically (DEC-020)
+AED_AUTO_AGGREGATION = env.bool("AED_AUTO_AGGREGATION", default=True)  # noqa: F405
 SESSION_COOKIE_SECURE = False
 API_TOKEN_COOKIE_NAME = "local_apiauthtoken"
 

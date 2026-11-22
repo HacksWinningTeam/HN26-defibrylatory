@@ -62,6 +62,48 @@ def validate_resource(resource, apply_blocking=True):
     return report
 
 
+AUTO_AGGREGATION_DELAY = 15  # s: lets several resources accepted together share one run
+AUTO_AGGREGATION_DEBOUNCE = 45  # s: at most one queued automatic run per standard in this window
+
+
+def auto_aggregation_key(standard):
+    return "mcod_aed:auto_aggregation:{}".format(standard.code)
+
+
+def queue_auto_aggregation(resource, standard, report):
+    """A source resource passed its standard and is published -> refresh the common dataset (DEC-020).
+
+    Returns True when an aggregation run was queued.
+    """
+    from django.conf import settings
+    from django.core.cache import cache
+
+    from mcod.aed.aggregate import supports_aggregation
+    from mcod.resources.models import Resource
+
+    if not getattr(settings, "AED_AUTO_AGGREGATION", True) or report is None or report["blocking"]:
+        return False
+    if not supports_aggregation(standard) or resource.dataset_id == standard.target_dataset_id:
+        return False  # never re-trigger from the common dataset's own files
+    status = Resource.raw.filter(pk=resource.pk).values_list("status", flat=True).first()
+    if status != "published":
+        return False
+    try:
+        if not cache.add(auto_aggregation_key(standard), resource.pk, timeout=AUTO_AGGREGATION_DEBOUNCE):
+            return False  # a run is already queued for this standard
+    except Exception:  # cache down: still refresh, just without debouncing
+        logger.exception("mcod.aed: auto-aggregation debounce unavailable")
+    from mcod.aed.tasks import aggregate_task
+
+    aggregate_task.apply_async(
+        kwargs={"triggered_by": "auto: zasób {} zgodny ze standardem".format(resource.pk),
+                "standard_code": standard.code},
+        countdown=AUTO_AGGREGATION_DELAY,
+    )
+    logger.info("mcod.aed: resource %s accepted -> aggregation of %s queued", resource.pk, standard.code)
+    return True
+
+
 def block_resource(resource):
     """Unpublish a resource that fails its standard (portal signals update ES/search)."""
     from mcod.resources.models import Resource

@@ -10,13 +10,15 @@ UPSTREAM_FILE_TASK = "mcod.resources.tasks.entrypoint_process_resource_file_vali
 @extended_shared_task(ignore_result=True, name="mcod.aed.tasks.validate_resource_standard_task")
 def validate_resource_standard_task(resource_id):
     """Validate a resource against its dataset's standard; unpublish it when blocking (DEC-015)."""
-    from mcod.aed.resource_validation import validate_resource
+    from mcod.aed.resource_validation import queue_auto_aggregation, standard_for_resource, validate_resource
     from mcod.resources.models import Resource
 
     resource = Resource.raw.filter(pk=resource_id, is_removed=False).first()
     if resource is None:
         return None
     report = validate_resource(resource)
+    if report is not None:
+        queue_auto_aggregation(resource, standard_for_resource(resource), report)
     return None if report is None else report["status"]
 
 

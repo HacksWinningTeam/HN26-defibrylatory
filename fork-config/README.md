@@ -71,12 +71,24 @@ as datasets of their own institutions with "Standard danych" = aed-pl, plus Open
 `WARSAW_API_TOKEN` is read by `fork-compose.sh` from the repo's untracked `.env` (recreate admin/api/celery after changing it).
 Legionowo's original file is blocked by validation; a corrected copy (`mcod_aed/fixtures/corrected/`) is published next to it (DEC-016).
 
+Universal standards (T16–T19, DEC-019): standards are JSON files in `mcod_aed/standards/` (`zlobki-pl.json`: fields,
+types, allowed values + aliases, synonyms = other accepted column names, merge keys, dane.gov.pl discovery, publish settings),
+loaded with `docker exec mcod-admin python manage.py aed_load_standard`. Generic engine for every standard except `aed-pl`:
+`aed_import_sources --standard <code>`, `aed_aggregate --standard <code>` (or the admin button per standard), API
+`/1.4/standards`, `/1.4/standards/<code>/schema|validate|sources`. Note: `local.py` takes `SESSION_COOKIE_DOMAIN` from the
+environment (the upstream sample hard-coded `mcod.local`, which broke admin login on the public hostname).
+
 Demo preparation (T09): `fork-config/aed-demo.sh [--offline]` = import + wait for validation + aggregation (~45 s). Script: `docs/demo-script.md`.
 
 Aggregation (T13): `docker exec mcod-admin python manage.py aed_aggregate` or admin *Standardy danych* → "Uruchom agregację"
 (Celery) → all published, non-blocked resources of `aed-pl` datasets → `AedSourceRecord` → merge → `AedDevice` → common dataset
 "Defibrylatory AED – zbiór ogólnopolski" (CSV with Tabela/Mapa, XLSX, GeoJSON, schema, API link). API: `/1.4/aed/devices`
 (GeoJSON, `bbox`, `q`), `/1.4/aed/sources` (per-source report). Datasets marked as demo must stay drafts (never aggregated).
+
+Automatic aggregation (DEC-020): when a source resource passes its standard and is published, Celery queues the
+aggregation of that standard itself (15 s delay, at most one queued run per standard per 45 s; run shown as
+"auto: zasób N zgodny ze standardem"; resource admin page says when the common dataset was refreshed). Off with
+`AED_AUTO_AGGREGATION=False` in the fork environment. Deleting a resource does not trigger a run — click the button.
 
 Validation API (T14): `POST /1.4/aed/validate` (multipart `file`, raw body, or JSON `{"url"}` / `{"resource_id"}`; `?strict=true`), `GET` = help;
 `GET /1.4/resources/{id}/standard-validation` = stored result. Samples: `docs/demo/samples/*.csv`.

@@ -241,6 +241,56 @@ class AutomaticValidationTests(unittest.TestCase):
         except _Rollback:
             pass
 
+    def test_accepted_resource_queues_one_automatic_aggregation(self):
+        from unittest import mock
+
+        from django.core.cache import cache
+
+        from mcod.aed import resource_validation
+        from mcod.aed.models import DataStandard
+        from mcod.aed.resource_validation import queue_auto_aggregation, validate_resource
+
+        here = os.path.join(os.path.dirname(__file__), "samples")
+        good = open(os.path.join(here, "aed-torun-demo.csv"), "rb").read()
+        bad = open(os.path.join(here, "aed-invalid-demo.csv"), "rb").read()
+        standard = DataStandard.objects.get(code="aed-pl")
+        cache.delete(resource_validation.auto_aggregation_key(standard))
+        try:
+            with transaction.atomic(), mock.patch("mcod.aed.tasks.aggregate_task.apply_async") as queued:
+                _, resource = self._make_dataset_resource(good)
+                report = validate_resource(resource)
+                self.assertTrue(queue_auto_aggregation(resource, standard, report))
+                kwargs = queued.call_args[1]["kwargs"]
+                self.assertEqual(kwargs["standard_code"], "aed-pl")
+                self.assertIn(str(resource.pk), kwargs["triggered_by"])
+                self.assertFalse(queue_auto_aggregation(resource, standard, report))  # debounced
+                from mcod.aed.integration import auto_aggregation_note
+                from mcod.aed.models import AedImportRun
+
+                self.assertIn("w kolejce", auto_aggregation_note(standard, resource.pk))
+                AedImportRun.objects.create(standard=standard, status="ok", devices_count=7, sources_count=2,
+                                            triggered_by=kwargs["triggered_by"])
+                self.assertIn("2 źródeł → 7 obiektów", auto_aggregation_note(standard, resource.pk))
+                self.assertEqual(queued.call_count, 1)
+
+                cache.delete(resource_validation.auto_aggregation_key(standard))
+                _, blocked = self._make_dataset_resource(bad)
+                self.assertFalse(queue_auto_aggregation(blocked, standard, validate_resource(blocked)))
+                original_target = standard.target_dataset_id
+                standard.target_dataset_id = resource.dataset_id  # in memory only: "this is the common dataset"
+                self.assertFalse(queue_auto_aggregation(resource, standard, report))
+                standard.target_dataset_id = original_target
+                from django.test.utils import override_settings
+
+                with override_settings(AED_AUTO_AGGREGATION=False):
+                    self.assertFalse(queue_auto_aggregation(resource, standard, report))
+                self.assertEqual(queued.call_count, 1)
+                raise _Rollback
+        except _Rollback:
+            pass
+        finally:
+            cache.delete(resource_validation.auto_aggregation_key(standard))
+
     def test_valid_resource_stays_published(self):
         from mcod.aed.resource_validation import validate_resource
         from mcod.resources.models import Resource

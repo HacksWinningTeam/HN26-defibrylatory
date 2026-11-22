@@ -301,3 +301,35 @@ def add_validation_message(request, object_id):
         messages.success(request, text)
     else:
         messages.warning(request, text)
+    if not obj.blocking:
+        note = auto_aggregation_note(obj.standard, object_id)
+        if note:
+            messages.info(request, note)
+
+
+def auto_aggregation_note(standard, resource_id):
+    """Text about the automatic refresh of the common dataset triggered by this resource (DEC-020)."""
+    from mcod.aed.models import AedImportRun
+    from mcod.datasets.models import Dataset
+
+    title = Dataset.raw.filter(pk=standard.target_dataset_id).values_list("title", flat=True).first() \
+        or (standard.publish or {}).get("title") or standard.name
+    marker = "zasób {} ".format(resource_id)
+    run = AedImportRun.objects.filter(standard=standard, triggered_by__contains=marker).order_by("-pk").first()
+    if run is None:
+        from django.core.cache import cache
+
+        from mcod.aed.resource_validation import auto_aggregation_key
+
+        try:
+            queued = str(cache.get(auto_aggregation_key(standard))) == str(resource_id)
+        except Exception:
+            queued = False
+        return "Zbiór zbiorczy „{}” zostanie odświeżony automatycznie (agregacja w kolejce).".format(
+            title) if queued else ""
+    if run.status == run.STATUS_RUNNING:
+        return "Zbiór zbiorczy „{}” jest właśnie odświeżany automatycznie (agregacja #{}).".format(title, run.pk)
+    if run.status == run.STATUS_OK:
+        return ("Zbiór zbiorczy „{}” odświeżony automatycznie po przyjęciu tego zasobu: {} źródeł → {} obiektów "
+                "(agregacja #{}).").format(title, run.sources_count, run.devices_count, run.pk)
+    return "Automatyczna agregacja #{} zakończyła się błędem – szczegóły w „Agregacje”.".format(run.pk)
