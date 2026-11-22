@@ -23,3 +23,4 @@ Write rough ideas, priorities, constraints, and extra notes here before kickoff 
 <!-- Add dated notes below, then invoke hackathon-update-plan so docs/04-decisions.md and tasks stay synced -->
 - `[2026-11-21 18:00]` Kickoff recorded as DEC-002.
 - `[2026-11-22 00:00]` Pivot: AED aggregation (uploaded files + connected APIs) into one common structure and a validation API, built inside the dane.gov.pl fork without our own backend; keep the map reading portal data → DEC-014.
+- `[2026-11-22 04:00]` Show that schema-based aggregation is universal: second standard (nurseries from dane.gov.pl), standards defined as JSON → DEC-019.

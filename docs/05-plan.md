@@ -46,6 +46,17 @@ Order: T11 → T14 (validation needs only the ported schema/parsers — the expl
 | `T13` | In-portal aggregation → converted sources + common dataset published natively; `/1.4/aed/sources`, `/1.4/aed/devices` | Backend (fork) | No | `T12` | 2.5 h | `VERIFIED` | [T13](tasks/T13-in-portal-aggregation.md) |
 | `T15` | Next.js map reads data from the fork API | Frontend | No | `T13` | 1 h | `VERIFIED` | [T15](tasks/T15-map-reads-fork-api.md) |
 
+## Milestone 5 — Universal Data Standards (DEC-019)
+
+Second standard "Żłobki i kluby dziecięce" proves the engine is not AED-only. ~3.5 h; cut order: nursery map → admin JSON editing → generic `/1.4/standards/*` API.
+
+| ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `T16` | Standards defined as data (fields, synonyms, merge rule) + JSON loader | Backend (fork) | No | `T13` | 1 h | `TODO` | [T16](tasks/T16-data-defined-standards.md) |
+| `T17` | Generic validation + `/1.4/standards/{code}/…` API | Backend (fork) | No | `T16` | 1 h | `TODO` | [T17](tasks/T17-generic-validation.md) |
+| `T18` | Generic aggregation + nursery datasets from dane.gov.pl | Backend (fork) | No | `T17` | 1 h | `TODO` | [T18](tasks/T18-generic-aggregation-nurseries.md) |
+| `T19` | Universal standards on the server + demo script | Infra | No | `T18` | 0.5 h | `TODO` | [T19](tasks/T19-universal-demo-server.md) |
+
 ## Milestone 4 — Demo Polish & End-to-End Readiness
 
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
