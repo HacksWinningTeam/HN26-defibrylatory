@@ -1,171 +1,85 @@
-# Django + DRF + Next.js Docker Template
+# Misja AED – dane na ratunek
 
-A Docker-first full-stack application template combining **Django 5.2 LTS**, **Django REST Framework**, **`drf-spectacular`** (OpenAPI 3, Swagger UI, ReDoc), **PostgreSQL 18**, and **Next.js 16** (App Router, React 19, TypeScript, Tailwind CSS v4).
+## Co to jest
 
-## Stack & Tooling
+Portal **dane.gov.pl rozszerzony o moduł agregacji danych**.
 
-- **Backend**: Python 3.12, Django 5.2 LTS, DRF, `drf-spectacular`, `django-cors-headers`, `django-environ`, `psycopg[binary]`, Gunicorn + WhiteNoise (`prod` target), managed with **`uv`**
-- **Database**: PostgreSQL 18 (`postgres:18-alpine`)
-- **Frontend**: Node 22, Next.js 16 (App Router + `output: "standalone"`), React 19, TypeScript, Tailwind CSS v4, ESLint 9 flat config, managed with **`npm`**
-- **Orchestration**: Docker Compose (`compose.yaml`) with multi-stage `dev` and `prod` Dockerfile targets
+Dane o defibrylatorach AED są w portalu rozproszone w wielu zbiorach różnych instytucji, każdy w innym formacie. Nasz moduł:
 
-## Project Structure
+1. **Definiuje standardy danych.** Standard to zestaw reguł dla jednej grupy danych: pola wymagane, zalecane i opcjonalne, typy, słowniki wartości, wzorce oraz reguła scalania duplikatów. Każdy standard opisuje jeden plik JSON.
+2. **Waliduje każdy nowy plik.** Plik niezgodny ze standardem jest odrzucany, a portal pokazuje błędne wiersze i pola.
+3. **Agreguje dane automatycznie.** Dane z przyjętego pliku trafiają do wspólnego zbioru publikowanego w portalu (tabela, mapa, CSV, XLSX, GeoJSON, API). Duplikaty z różnych źródeł są scalane, a każdy rekord wskazuje swoje źródła.
 
-```text
-.
-├── .agents/skills/          # Shared Antigravity + Claude Code workflow skills
-├── .claude/
-│   ├── rules/
-│   │   └── deploy-and-docker.md # Path-scoped Docker/CI guardrails for Claude Code
-│   └── skills/              # Symlinks pointing to ../../.agents/skills/*
-├── .github/workflows/
-│   └── deploy.yml           # Self-hosted Hetzner deploy on push to main
-├── docs/
-│   ├── inputs/              # Organizer PDFs, UI sketches/assets, and my-notes.md
-│   ├── tasks/               # Per-task specs, UI designs & verification checklists
-│   ├── 01-brief.md – 05-plan.md # Distilled brief, UI system, architecture, DEC log, roadmap
-│   └── README.md            # Step-by-step hackathon workflow guide
-├── backend/
-│   ├── apps/core/           # Healthcheck API endpoint, OpenAPI schema & pytest suite
-│   ├── config/              # Django settings, URLs (admin, API, Swagger, ReDoc), ASGI/WSGI
-│   ├── AGENTS.md            # Backend rules (Django, DRF, uv, pytest, ruff)
-│   ├── CLAUDE.md            # Lazy-loaded adapter importing backend/AGENTS.md
-│   ├── Dockerfile           # Multi-stage uv build (dev + non-root gunicorn prod)
-│   ├── entrypoint.sh        # Optional migration runner on container startup
-│   ├── manage.py
-│   └── pyproject.toml       # Dependencies, pytest, and ruff configuration
-├── frontend/
-│   ├── public/              # Static assets copied into Next.js standalone image
-│   ├── src/app/             # App Router pages & WCAG 2.2 AA baseline light layout
-│   ├── src/components/      # Interactive API healthcheck client component
-│   ├── src/lib/api.ts       # SSR-aware API client (internal DNS vs same-origin proxy)
-│   ├── src/proxy.ts         # Next.js 16 proxy forwarding /api, /admin, /static to Django
-│   ├── AGENTS.md            # Frontend rules (Next.js 16, Tailwind v4, WCAG 2.2 AA)
-│   ├── CLAUDE.md            # Lazy-loaded adapter importing frontend/AGENTS.md
-│   ├── Dockerfile           # Multi-stage npm build (dev + standalone prod)
-│   ├── eslint.config.mjs    # ESLint 9 flat config
-│   ├── next.config.ts
-│   ├── postcss.config.mjs
-│   └── tsconfig.json
-├── .env.example
-├── AGENTS.md                # Shared root rules for Antigravity & Claude Code
-├── CLAUDE.md                # Root adapter importing @AGENTS.md
-├── compose.yaml             # Local hot-reload development stack
-├── compose.prod.yaml        # Single-port production stack (ports 3000-3100)
-└── Makefile
-```
+Mechanizm jest **uniwersalny**. Działają dwa standardy: **defibrylatory AED** (18 776 urządzeń z 6 źródeł) i **żłobki** (85 placówek z 8 instytucji). Kolejną grupę danych dodaje się nowym plikiem standardu, bez programowania.
 
-## Quick Start
+Dodatkowo **publiczna mapa AED** pokazuje mieszkańcom najbliższy defibrylator. Dane pobiera prosto z API portalu.
 
-1. **(Optional) Copy environment configuration:**
+Film demonstracyjny (2 min): [docs/demo/video/misja-aed-demo.mp4](docs/demo/video/misja-aed-demo.mp4)
 
-   ```bash
-   cp .env.example .env
-   ```
+## Wersja online
 
-   All services have safe local development defaults in `compose.yaml`, so `docker compose up --build` works even without a `.env` file.
+| Co | Adres |
+|---|---|
+| Mapa AED dla mieszkańców | http://2.29.205.102:3002/ |
+| Portal dane.gov.pl z modułem | https://mcod.2.29.205.102.sslip.io/pl |
+| Wspólny zbiór AED | https://mcod.2.29.205.102.sslip.io/pl/dataset/4217 |
+| Wspólny zbiór żłobków | https://mcod.2.29.205.102.sslip.io/pl/dataset/4226 |
+| Wzorcowy zakres danych AED (XLSX) | https://api.mcod.2.29.205.102.sslip.io/1.4/aed/schema.xlsx |
+| Panel administracyjny: standardy danych | https://admin.mcod.2.29.205.102.sslip.io/aed/datastandard/ |
+| API standardów | https://api.mcod.2.29.205.102.sslip.io/1.4/standards |
 
-2. **Build and start all containers:**
+Logowanie do panelu: `admin@mcod.local` / `testadmin123!` (konto testowe na czas oceny).
 
-   ```bash
-   docker compose up --build
-   # or: make up
-   ```
+**Jak sprawdzić przepływ:** w panelu dodaj zasób z plikiem do zbioru „Defibrylatory zlokalizowane w Mieście Krosno” lub „Żłobki publiczne”. Przykładowe pliki są w [docs/demo/samples/](docs/demo/samples/): `*-krosno-nowe-bledny.csv` zostanie odrzucony, a `*-krosno-nowe-poprawiony.csv` po ok. minucie trafi do wspólnego zbioru.
 
-3. **Open the application and docs (single-port via Next.js proxy or direct backend in dev):**
-
-| Service / Endpoint | Single-Port URL (Dev & Prod) | Direct Backend URL (Dev Only) | Notes |
-| --- | --- | --- | --- |
-| Next.js Frontend | http://localhost:3000 | — | Server-side + browser API healthcheck UI |
-| Healthcheck API | http://localhost:3000/api/health/ | http://localhost:8000/api/health/ | Verifies Django + PostgreSQL (`SELECT 1`) |
-| Swagger UI | http://localhost:3000/api/docs/ | http://localhost:8000/api/docs/ | Interactive OpenAPI 3 UI (`drf-spectacular`) |
-| ReDoc | http://localhost:3000/api/redoc/ | http://localhost:8000/api/redoc/ | API reference UI (`drf-spectacular`) |
-| OpenAPI Schema | http://localhost:3000/api/schema/ | http://localhost:8000/api/schema/ | Raw OpenAPI 3 schema |
-| Django Admin | http://localhost:3000/admin/ | http://localhost:8000/admin/ | Admin interface (`make createsuperuser`) |
-
-## Container Networking (SSR, Proxy & Browser)
-
-Each app exposes only **one public port** (`FRONTEND_PORT`, default `3000`) in production via Next.js 16 proxying:
-
-- **`API_INTERNAL_URL=http://backend:8000`**: Used inside Docker by both Next.js Server Components (`src/lib/api.ts`) and Next.js 16's network-boundary proxy (`src/proxy.ts` + `skipTrailingSlashRedirect: true` in `next.config.ts`), which forwards `/api/*`, `/admin/*`, and `/static/*` requests to Django over the internal Docker network.
-- **`NEXT_PUBLIC_API_URL=` (empty by default)**: Keeps browser requests and documentation links same-origin (`/api/...`, `/admin/`), avoiding cross-origin issues and keeping PostgreSQL and Django unexposed in `compose.prod.yaml`. Set `NEXT_PUBLIC_API_URL` only if you host Django on a separate public origin.
-
-## Common Workflows
-
-Using `Makefile` (or the equivalent `docker compose` commands):
-
-- **Run migrations / create migrations:**
-  ```bash
-  make makemigrations
-  make migrate
-  ```
-- **Create a Django admin superuser:**
-  ```bash
-  make createsuperuser
-  ```
-- **Run backend tests (`pytest`):**
-  ```bash
-  make test
-  ```
-- **Run linters & typechecks (`ruff`, `tsc`, `eslint`):**
-  ```bash
-  make lint
-  ```
-- **Validate the OpenAPI schema with zero warnings:**
-  ```bash
-  make schema-check
-  ```
-- **Update dependencies:**
-  - Backend: edit `backend/pyproject.toml`, rebuild (`docker compose up --build backend`), or generate a lockfile inside the container with `docker compose run --rm backend uv lock`.
-  - Frontend: update `frontend/package.json` (or run `npm install <pkg>` inside `frontend/`), then renew the anonymous `node_modules` volume with:
-    ```bash
-    docker compose up -V --build
-    ```
-
-## AI Agent Rules (Antigravity & Claude Code)
-
-Shared hackathon instructions live in [`AGENTS.md`](AGENTS.md) (with scoped guides in [`backend/AGENTS.md`](backend/AGENTS.md) and [`frontend/AGENTS.md`](frontend/AGENTS.md)) as a single source of truth:
-
-- **Antigravity** automatically discovers `AGENTS.md` files from the workspace up to the repository root.
-- **Claude Code** loads [`CLAUDE.md`](CLAUDE.md) (`@AGENTS.md`) at startup, lazy-loads [`backend/CLAUDE.md`](backend/CLAUDE.md) and [`frontend/CLAUDE.md`](frontend/CLAUDE.md) when touching those folders, and applies [`.claude/rules/deploy-and-docker.md`](.claude/rules/deploy-and-docker.md) when editing Docker/CI files.
-- **Hackathon kickoff:** Fill in the short `Hackathon Project Brief` at the top of [`AGENTS.md`](AGENTS.md) before generating features so both tools share the same MVP scope, test requirements (`make test`, `make lint`, `make schema-check`), and manual-push deployment policy.
-
-## Hackathon Workflow
-
-A structured, spec-driven workflow lives in [`docs/README.md`](docs/README.md) with 5 shared skills in `.agents/skills/` (symlinked to `.claude/skills/`):
-
-1. **Inputs:** Put organizer PDF(s) in `docs/inputs/organizer-brief/`, UI sketches/assets in `docs/inputs/ui/`, and rough notes in [`docs/inputs/my-notes.md`](docs/inputs/my-notes.md).
-2. **Kickoff (`hackathon-kickoff`):** Distill raw PDFs and notes into [`docs/01-brief.md`](docs/01-brief.md), lightweight [`docs/02-ui-system.md`](docs/02-ui-system.md), and `DEC-001` in [`docs/04-decisions.md`](docs/04-decisions.md).
-3. **System Plan (`hackathon-plan`):** Design [`docs/03-architecture.md`](docs/03-architecture.md) and split the MVP into verifiable vertical-slice tasks in [`docs/05-plan.md`](docs/05-plan.md) and `docs/tasks/TXX-*.md`.
-4. **Per-Task UI Design & Implementation (`hackathon-ui-design` → `hackathon-run-task`):** Before each UI-facing task `TXX`, design its screen layout, states, API contract, and WCAG 2.2 AA checks in `docs/tasks/TXX-*.md`, get approval, then implement code + unit tests and run `make test`, `make lint`, `make schema-check`, plus manual verification.
-5. **Mid-Hackathon Changes (`hackathon-update-plan`):** Whenever new info or pivots arrive, log a numbered `DEC-XXX` in [`docs/04-decisions.md`](docs/04-decisions.md) and propagate updates across affected docs and tasks.
-
-## Deploying to Hetzner (GitHub Actions)
-
-Pushes to `main` trigger [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on a `self-hosted` runner, syncing the repository to `/home/github/apps/<repo-name>` (excluding `.git` and `.env`) and running `docker compose -f compose.prod.yaml up -d --build --remove-orphans`.
-
-- **Single open port per app (`3000–3100`):** In `compose.prod.yaml`, only `frontend` publishes a host port (`FRONTEND_PORT`, default `3000`); `db` and `backend` stay private on the Docker network and are reached via Next.js's proxy (`src/proxy.ts`). Each repository deployed to the same Hetzner host can set its own unique port in `3000–3100` via `FRONTEND_PORT`.
-- **One-time server `.env` setup:** Because the deploy step excludes `.git` and `.env` when syncing to `$APP_DIR`, an existing `/home/github/apps/<repo-name>/.env` is preserved across deploys. Create it once on the Hetzner machine before the first deploy:
-  ```dotenv
-  DJANGO_DEBUG=False
-  DJANGO_SECRET_KEY=<generate-a-long-random-secret>
-  POSTGRES_PASSWORD=<generate-a-strong-db-password>
-  FRONTEND_PORT=3000
-  DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend,<server-ip-or-domain>
-  DJANGO_CSRF_TRUSTED_ORIGINS=http://<server-ip>:3000
-  DJANGO_CORS_ALLOWED_ORIGINS=http://<server-ip>:3000
-  ```
-
-## Production Docker Builds
-
-Both Dockerfiles provide hardened, non-root `prod` targets (`gunicorn` + WhiteNoise for Django; `output: "standalone"` for Next.js):
+**Walidacja przez API**, bez logowania:
 
 ```bash
-docker build --target prod -t django-nextjs-backend:prod ./backend
-docker build --target prod -t django-nextjs-frontend:prod ./frontend
+curl -F file=@docs/demo/samples/aed-krosno-nowe-bledny.csv https://api.mcod.2.29.205.102.sslip.io/1.4/aed/validate
+curl -F file=@docs/demo/samples/zlobki-krosno-nowe-bledny.csv https://api.mcod.2.29.205.102.sslip.io/1.4/standards/zlobki-pl/validate
 ```
 
-For production deployments:
-- Set `DJANGO_DEBUG=False` and provide a strong random `DJANGO_SECRET_KEY` (startup fails if `DJANGO_SECRET_KEY` is missing or left as the development placeholder).
-- Configure `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, and `DATABASE_URL` (or `POSTGRES_*`).
-- Run `python manage.py migrate --noinput` (or pass `RUN_MIGRATIONS=true`) before serving traffic.
+## Uruchomienie lokalne
+
+Wymagania: Linux, Docker z Compose, ok. 16 GB RAM, wolne porty 80, 443 i 3000.
+
+### 1. Portal dane.gov.pl z modułem
+
+Kod portalu dane.gov.pl umieść w katalogu `dane-gov-pl/` (podkatalogi `backend_latest/` i `frontend_latest/`). Katalog jest pominięty w repozytorium. Nie modyfikujemy kodu portalu: nasz moduł (`fork-config/mcod_aed/`) i konfiguracja są podpinane przez `fork-config/setup.sh`.
+
+```bash
+# jednorazowo
+echo '127.0.0.1 mcod.local api.mcod.local admin.mcod.local cms.mcod.local aed.mcod.local' | sudo tee -a /etc/hosts
+sudo sysctl -w vm.max_map_count=262144
+
+fork-config/setup.sh        # budowa i start portalu (pierwszy raz ok. 25 min)
+fork-config/aed-demo.sh     # import zbiorów AED z dane.gov.pl i OpenStreetMap + agregacja
+                            # (--offline: z kopii zapisanej w repozytorium)
+
+# standard „Żłobki”
+docker exec mcod-admin python manage.py aed_load_standard
+docker exec mcod-admin python manage.py aed_import_sources --standard zlobki-pl
+docker exec mcod-admin python manage.py aed_aggregate --standard zlobki-pl
+```
+
+Adresy: https://mcod.local (portal), https://admin.mcod.local (panel, login jak wyżej), https://api.mcod.local/1.4/standards (API). Certyfikat jest lokalny, więc przeglądarka poprosi o jego akceptację.
+
+Kolejne uruchomienia: `fork-config/start.sh`, zatrzymanie: `fork-config/stop.sh`. Szczegóły: [fork-config/README.md](fork-config/README.md).
+
+### 2. Mapa AED (Next.js)
+
+```bash
+make up                     # http://localhost:3000 (dane z https://api.mcod.local)
+```
+
+## Struktura repozytorium
+
+| Katalog | Zawartość |
+|---|---|
+| `fork-config/mcod_aed/` | moduł portalu: standardy, walidacja, konwersja, scalanie, agregacja, API |
+| `fork-config/mcod_aed/standards/` | definicje standardów w JSON (AED jest w kodzie: `schema.py`) |
+| `fork-config/` | konfiguracja i skrypty uruchomienia portalu |
+| `frontend/` | publiczna mapa AED (Next.js) |
+| `docs/deliverables/` | wzorcowy zakres danych AED: XLSX, szablon CSV, JSON Schema |
+| `docs/demo/` | film, przykładowe pliki, zrzuty ekranu |
+| `docs/` | brief, architektura, decyzje projektowe, plan |
