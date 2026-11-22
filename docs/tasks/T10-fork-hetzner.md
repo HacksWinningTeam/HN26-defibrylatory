@@ -54,6 +54,7 @@ N/A — backend/infra only.
 - Fixed during deploy: `setup.sh` re-copied un-rewritten config (deployed `fork-config` copies are rewritten too); Celery's `mcod.local.pem` mount (certificate now installed under that name); Angular/Vite host check (`allowedHosts: true` in the deployed `angular.json`).
 - **Warsaw city API (dane.um.warszawa.pl) times out from the Hetzner server** (works from Poland): the connector falls back to the committed copy of the Warsaw API answer from 2026-11-21, **labelled** in the aggregation report and command output ("API m.st. Warszawy niedostępne z tego serwera – użyto oznaczonej kopii offline …").
 - Screenshots: `docs/demo/screenshots/T10-pub-*.png`.
+- Follow-up (user request): the public map http://2.29.205.102:3002/ now reads the server portal — `DANEGOV_API_URL=https://api.mcod.2.29.205.102.sslip.io` added to the server's app `.env` (kept by CI; backup `.env.bak-*`), frontend recreated → `x-aed-data-source: dane.gov.pl fork`, "18 776 AED z 6 źródeł". `docs/demo-script.md` has a public-URL section.
 
 ### Manual Verification
 1. From any device (e.g. phone on mobile data): https://mcod.2.29.205.102.sslip.io → search "defibrylator" → 6 source datasets + "Defibrylatory AED – zbiór ogólnopolski" → CSV → Tabela / Mapa (no certificate warning)

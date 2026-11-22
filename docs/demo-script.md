@@ -3,6 +3,24 @@
 > Audience: hackathon judges. Length: ~6–7 min + Q&A. Everything runs **inside a local fork of dane.gov.pl**
 > (module `mcod.aed`, code in `fork-config/mcod_aed/`). Screenshots: `docs/demo/screenshots/T09-*.png` (+ T07/T15 map).
 
+## Public demo for the judges (Hetzner, T10 / DEC-018)
+
+Works from any device, valid HTTPS certificates, no hosts edits — use these instead of the local URLs below.
+
+| Tab | Local (your machine) | **Public (server)** |
+|---|---|---|
+| A Admin | https://admin.mcod.local | **https://admin.mcod.2.29.205.102.sslip.io** (`admin@mcod.local` / `testadmin123!`) |
+| B Portal | https://mcod.local/pl/dataset?q=defibrylator | **https://mcod.2.29.205.102.sslip.io/pl/dataset?q=defibrylator** |
+| C API | https://api.mcod.local/1.4/aed/schema | **https://api.mcod.2.29.205.102.sslip.io/1.4/aed/schema** |
+| D Map | http://localhost:3000/ | **http://2.29.205.102:3002/** (reads the server portal's `/1.4/aed/devices`) |
+| Common dataset | …/pl/dataset/4211,… | **https://mcod.2.29.205.102.sslip.io/pl/dataset/4217,defibrylatory-aed-zbior-ogolnopolski** |
+
+- Refresh data on the server: `ssh hack 'cd /home/github/apps/danegov-fork && fork-config/aed-demo.sh'` (~1 min).
+- Validation API from any terminal: `curl -s -F file=@docs/demo/samples/aed-invalid-demo.csv https://api.mcod.2.29.205.102.sslip.io/1.4/aed/validate`
+- Step 4 on the server: dataset "Defibrylatory zlokalizowane w Mieście Krosno" (id 4211 there) — the invalid file is refused, nothing changes.
+- **Say it:** the Warsaw city API (dane.um.warszawa.pl) does not answer from the server's data centre (it works from Poland), so on the server Warsaw's 708 AEDs come from the **labelled** copy of that API's answer from 2026-11-21 — visible in the aggregation report.
+- Screenshots of the public instance: `docs/demo/screenshots/T10-pub-*.png`.
+
 ## Before the demo (T-15 min)
 
 1. Fork running: `fork-config/start.sh` (or check `fork-config/fork-compose.sh ps`); map: `docker compose up -d --no-deps frontend`.
@@ -109,7 +127,7 @@ See "Limitations" below.
 
 ## Limitations (say them)
 
-- Demo runs on a local fork; the live Hetzner app (push to `main`) shows the map from the earlier stand-alone backend (no fork there).
+- The public instance runs the portal's Angular **development** server and self-managed containers on one shared server (not a production setup); Warsaw data there comes from a labelled copy (API unreachable from the data centre).
 - One standard per dataset; new standards are defined in code (admin edits name/limit/target only).
 - Blocking threshold 20 % invalid rows (configurable per standard); required fields the portal can fill from metadata (id, source, date, access) are warnings.
 - The nearest AED to the venue in the merged data is 3 km away — real data gap, shown honestly ("Daleko – dzwoń 112").
