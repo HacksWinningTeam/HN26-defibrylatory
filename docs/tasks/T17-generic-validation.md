@@ -1,6 +1,6 @@
 # `T17` — Generic validation for any standard + `/1.4/standards/{code}/…` API
 
-- **Status:** `TODO`
+- **Status:** `VERIFIED`
 - **Layer:** `Backend (fork)`
 - **UI Design Required:** `No`
 - **Depends On:** `T16`
@@ -26,21 +26,28 @@ N/A — backend/infra only (portal admin/portal pages are existing UI).
 
 ## Acceptance Criteria
 
-- [ ] A nursery CSV with the standard's columns → `valid`; a broken one (missing `nazwa`, `liczba_miejsc` = "dużo") → errors per row/field, blocking
-- [ ] Uploading the broken file to a dataset with standard "Żłobki…" in the admin is refused
-- [ ] All AED validation tests unchanged and green
+- [x] `zlobki-valid-demo.csv` → `valid`; `zlobki-invalid-demo.csv` → 9 errors (type, pattern, allowed value, minimum, required, duplicate id), blocking; `zlobki-legacy-demo.csv` (real Inowrocław-style headers incl. broken encoding) → all columns mapped by synonyms, `warnings`, not blocking (`?strict=true` → blocking)
+- [x] Admin upload rule + background validation dispatch per standard: a nursery resource with the invalid file → stored `invalid` for `zlobki-pl`, set to draft; the form refuses the invalid file and accepts the valid one (tested in a rolled-back transaction; live admin check with real nursery datasets in T18)
+- [x] All AED validation tests unchanged and green; live re-validation of Krosno / Legionowo original / corrected copy gives the same results as before
 
 ## Verification Checklist
 
 ### Automated Checks
-- [ ] `fork-config/test.sh` passes (incl. new tests for `T17`; all AED tests unchanged and green)
-- [ ] `make test` / `make lint` still pass for the repo
-- [ ] Fork healthy (`manage.py check`, migrations applied, no hook errors)
+- [x] `fork-config/test.sh` passes — 75 tests (8 new in `test_generic.py`: coercion, valid/invalid/legacy files, strict, unmappable file, AED vs generic dispatch, nursery resource blocking + form rule, `/1.4/standards` API)
+- [~] `make test` / `make lint` — not affected (no repo code changed in T17; last run green in T16)
+- [x] Fork healthy (no migration changes, no hook errors)
+
+### Observed Results (2026-11-22 ~04:40)
+- `generic.py`: column mapping (exact name, then declared synonyms; geometry only if the spec has coordinates), lenient-but-reported coercion (e.g. "tak" → true, "22/11/2026" → 2026-11-22, "276-115-858" → REGON digits, "Klub dziecięcy" → `klub_dzieciecy` = warnings `value_converted`), same report shape and blocking rules as AED. `validation.validate_for_standard()` is the single entry point used by the admin form, the background validation and the API (`aed-pl` → verified AED rules).
+- API: `GET /1.4/standards`, `GET /1.4/standards/{code}/schema` (+ `.xlsx`, `.csv` template, `.json` JSON Schema, `table-schema.json`), `GET|POST /1.4/standards/{code}/validate`; unknown standard → 404; `/1.4/aed/*` unchanged (incl. the help resource type).
+- Samples: `docs/demo/samples/zlobki-{valid,invalid,legacy}-demo.csv` (invented demo data, labelled "(demo)").
 
 ### Manual Verification
-1. `curl -sk -F file=@… https://api.mcod.local/1.4/standards/zlobki-pl/validate`
-2. Admin upload of the invalid nursery sample → refused
+1. https://api.mcod.local/1.4/standards → two standards; https://api.mcod.local/1.4/standards/zlobki-pl/schema and `/schema.xlsx`
+2. `curl -sk --resolve api.mcod.local:443:127.0.0.1 -F file=@docs/demo/samples/zlobki-invalid-demo.csv https://api.mcod.local/1.4/standards/zlobki-pl/validate | python3 -m json.tool | less` → `"blocking": true`, 9 errors
+3. Same with `zlobki-legacy-demo.csv` → `"status": "warnings"`, `column_mapping` shows "miejscowo" → `miejscowosc`, "max. liczba miejsc w obku" → `liczba_miejsc`
+4. `curl … -F file=@docs/demo/samples/aed-invalid-demo.csv https://api.mcod.local/1.4/aed/validate` → AED result unchanged (3 invalid rows)
 
 ### Sign-Off
-- **Verified By:** `—`
+- **Verified By:** User (marcin) on 2026-11-22 04:10
 - **Notes / Follow-Ups:** —

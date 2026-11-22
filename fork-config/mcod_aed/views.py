@@ -157,10 +157,23 @@ def _read_request_input(req):
 
 
 class AedValidateView:
-    """POST /1.4/aed/validate — validate data against the AED standard (T14). GET = usage."""
+    """POST /1.4/aed/validate and /1.4/standards/{code}/validate — validate data against a standard (T14/T17).
+    GET = usage."""
 
     def on_get(self, req, resp, **kwargs):
-        data = jsonapi.resource_object("aed_validation_help", "aed-pl", _validation_help(req))
+        code = kwargs.get("code") or AED_STANDARD_CODE
+        help_doc = _validation_help(req)
+        if code != AED_STANDARD_CODE:
+            root = _api_root(req)
+            path = "{}/1.4/standards/{}".format(root, code)
+            help_doc["description"] = help_doc["description"].replace("o defibrylatorach AED", "").replace(
+                "(standard aed-pl)", "(standard {})".format(code))
+            help_doc["methods"] = {k: v.replace(root + "/1.4/aed/validate", path + "/validate")
+                                   for k, v in help_doc["methods"].items()}
+            help_doc["schema"] = path + "/schema"
+            help_doc["template_csv"] = path + "/schema.csv"
+        help_type = "aed_validation_help" if code == AED_STANDARD_CODE else "validation_help"  # AED API unchanged
+        data = jsonapi.resource_object(help_type, code, help_doc)
         jsonapi.send(resp, req, data)
 
     def on_post(self, req, resp, **kwargs):
@@ -176,8 +189,11 @@ class AedValidateView:
                           "Nie można odczytać żądania: {}".format(exc))
         strict = str(req.get_param("strict") or payload.get("strict") or "").lower() in TRUE_PARAMS
         fmt = req.get_param("format") or payload.get("format") or payload.get("fmt")
-        standard = DataStandard.objects.filter(code=AED_STANDARD_CODE).first()
-        max_ratio = standard.max_invalid_ratio if standard else validation.DEFAULT_MAX_INVALID_RATIO
+        code = kwargs.get("code") or AED_STANDARD_CODE
+        standard = DataStandard.objects.filter(code=code, is_active=True).first()
+        if standard is None and code != AED_STANDARD_CODE:
+            return _error(resp, req, falcon.HTTP_404, "404_not_found", "404 Not Found",
+                          "Nie ma aktywnego standardu danych „{}”.".format(code))
         source = {}
         try:
             if payload.get("resource_id") not in (None, ""):
@@ -200,8 +216,8 @@ class AedValidateView:
             if len(raw) > MAX_UPLOAD_BYTES:
                 return _error(resp, req, falcon.HTTP_413, "413_payload_too_large", "413 Payload Too Large",
                               "Maksymalny rozmiar danych: {} MB.".format(MAX_UPLOAD_BYTES // 1024 // 1024))
-            report = validation.validate_bytes(raw, filename=filename, fmt=fmt, strict=strict,
-                                               max_invalid_ratio=max_ratio)
+            report = validation.validate_for_standard(raw, standard=standard, filename=filename, fmt=fmt,
+                                                      strict=strict)
         except (ValueError, TypeError) as exc:
             if not isinstance(exc, validation.ValidationInputError):
                 return _error(resp, req, falcon.HTTP_400, "400_bad_request", "400 Bad Request", str(exc))
@@ -368,4 +384,99 @@ class AedSourcesView:
 ROUTES += [
     ("/aed/devices", AedDevicesView()),
     ("/aed/sources", AedSourcesView()),
+]
+
+
+# --- Data-defined standards (T17, DEC-019) ---------------------------------------------------------
+
+
+def _standard_or_404(req, resp, code):
+    from mcod.aed.models import DataStandard
+
+    standard = DataStandard.objects.filter(code=code, is_active=True).first()
+    if standard is None:
+        _error(resp, req, falcon.HTTP_404, "404_not_found", "404 Not Found",
+               "Nie ma aktywnego standardu danych „{}”.".format(code))
+    return standard
+
+
+def _standard_links(req, code):
+    base = "{}/1.4/standards/{}".format(_api_root(req), code)
+    return {"schema": base + "/schema", "xlsx": base + "/schema.xlsx", "csv_template": base + "/schema.csv",
+            "json_schema": base + "/schema.json", "table_schema": base + "/table-schema.json",
+            "validate": base + "/validate", "sources": base + "/sources"}
+
+
+class StandardsListView:
+    """GET /1.4/standards — data standards of the portal (DEC-019)."""
+
+    def on_get(self, req, resp, **kwargs):
+        from mcod.aed.models import DataStandard
+
+        data = []
+        for standard in DataStandard.objects.filter(is_active=True).order_by("name"):
+            spec = standard.spec()
+            attrs = standard.as_api_dict()
+            attrs.update({
+                "description": standard.description, "fields_count": len(spec.fields),
+                "required_fields": spec.required, "merge": spec.merge, "max_invalid_ratio": standard.max_invalid_ratio,
+                "datasets_count": standard.dataset_links.count(),
+                "target_dataset_id": standard.target_dataset_id, "links": _standard_links(req, standard.code),
+            })
+            data.append(jsonapi.resource_object("data_standard", standard.code, attrs,
+                                                self_link=_standard_links(req, standard.code)["schema"]))
+        jsonapi.send(resp, req, data, count=len(data))
+
+
+class StandardSchemaView:
+    """GET /1.4/standards/{code}/schema — the structure of one standard."""
+
+    def on_get(self, req, resp, code=None, **kwargs):
+        standard = _standard_or_404(req, resp, code)
+        if standard is None:
+            return
+        attrs = standard.spec().document()
+        attrs["downloads"] = _standard_links(req, code)
+        data = jsonapi.resource_object("data_standard_schema", code, attrs, self_link=attrs["downloads"]["schema"])
+        jsonapi.send(resp, req, data)
+
+
+class StandardSchemaFileView:
+    """GET /1.4/standards/{code}/schema.{xlsx,csv,json} and table-schema.json."""
+
+    def __init__(self, kind):
+        self.kind = kind
+
+    def on_get(self, req, resp, code=None, **kwargs):
+        import json
+
+        standard = _standard_or_404(req, resp, code)
+        if standard is None:
+            return
+        spec = standard.spec()
+        name = "{}-{}".format(code, spec.version)
+        if self.kind == "xlsx":
+            body, ctype, filename = spec.xlsx_bytes(), schema_export.XLSX_CONTENT_TYPE, name + ".xlsx"
+        elif self.kind == "csv":
+            body, ctype, filename = spec.csv_template().encode("utf-8-sig"), "text/csv; charset=utf-8", name + "-szablon.csv"
+        elif self.kind == "json":
+            body = json.dumps(spec.json_schema(), ensure_ascii=False, indent=2).encode("utf-8")
+            ctype, filename = "application/schema+json", name + ".schema.json"
+        else:
+            body = json.dumps(spec.table_schema(), ensure_ascii=False, indent=2).encode("utf-8")
+            ctype, filename = "application/json", name + ".table-schema.json"
+        resp.status = falcon.HTTP_200
+        resp.content_type = ctype
+        resp.data = body
+        resp.set_header("Content-Disposition", 'attachment; filename="{}"'.format(filename))
+
+
+ROUTES += [
+    ("/standards", StandardsListView()),
+    ("/standards/{code}/schema", StandardSchemaView()),
+    ("/standards/{code}/schema.xlsx", StandardSchemaFileView("xlsx")),
+    ("/standards/{code}/schema.csv", StandardSchemaFileView("csv")),
+    ("/standards/{code}/schema.json", StandardSchemaFileView("json")),
+    ("/standards/{code}/table-schema.json", StandardSchemaFileView("table")),
+    ("/standards/{code}/validate", AedValidateView()),
 ]

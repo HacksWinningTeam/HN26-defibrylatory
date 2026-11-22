@@ -1,0 +1,4 @@
+id_placowki,nazwa,typ,podmiot_prowadzacy,miejscowosc,kod_pocztowy,liczba_miejsc,regon,data_aktualizacji,zrodlo
+DEMO-ZL-1,,zlobek,Gmina X,Bydgoszcz,85-674,dużo,123,2026-11-22,demo
+DEMO-ZL-2,Żłobek bez miejscowości,przedszkole,Gmina X,,85674,-5,,22/11/2026,demo
+DEMO-ZL-2,Żłobek z powtórzonym id,zlobek,,Bydgoszcz,85-674,20,,2026-11-22,demo

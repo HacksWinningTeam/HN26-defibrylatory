@@ -1,0 +1,3 @@
+id_placowki,nazwa,typ,podmiot_prowadzacy,miejscowosc,ulica,nr_budynku,kod_pocztowy,liczba_miejsc,regon,telefon,email,dostosowany_dla_niepelnosprawnych,data_aktualizacji,zrodlo
+DEMO-Z-001,Żłobek Miejski „Słoneczko” (demo),zlobek,Gmina Przykładowa (demo),Bydgoszcz,ul. Gdańska,187,85-674,60,276115858,+48 52 000 00 00,zlobek@example.org,true,2026-11-22,Przykładowy zbiór (demo)
+DEMO-Z-002,Klub Dziecięcy „Tęcza” (demo),klub_dzieciecy,Stowarzyszenie Przykładowe (demo),Bydgoszcz,ul. Jezuicka,1,85-102,15,,+48 52 000 00 01,,false,2026-11-22,Przykładowy zbiór (demo)

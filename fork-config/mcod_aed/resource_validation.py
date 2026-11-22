@@ -45,11 +45,10 @@ def validate_resource(resource, apply_blocking=True):
         return None
     try:
         raw, filename, fmt = connectors.resource_bytes(resource)
-        report = validation.validate_bytes(
-            raw, filename=filename, fmt=fmt, max_invalid_ratio=standard.max_invalid_ratio
-        )
+        report = validation.validate_for_standard(raw, standard=standard, filename=filename, fmt=fmt)
     except (connectors.SourceLoadError, validation.ValidationInputError) as exc:
-        report = validation.unreadable_report(str(exc), max_invalid_ratio=standard.max_invalid_ratio)
+        report = validation.unreadable_report(str(exc), max_invalid_ratio=standard.max_invalid_ratio,
+                                              standard_code=standard.code)
     store_report(resource, standard, report)
     if apply_blocking and report["blocking"] and resource.status == "published":
         block_resource(resource)

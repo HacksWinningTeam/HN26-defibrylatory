@@ -353,28 +353,51 @@ def validate_rows(rows, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATI
     return report
 
 
-def validate_bytes(raw, filename=None, fmt=None, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO):
-    """Parse + validate raw file content. Raises ValidationInputError for unreadable input."""
+def parse_bytes(raw, filename=None, fmt=None):
+    """-> (rows, fmt). Raises ValidationInputError for empty / unreadable input."""
     if not raw:
         raise ValidationInputError("Pusty plik / brak danych.")
     fmt = detect_format(raw, filename=filename, hint=fmt)
     try:
-        rows = parsers.parse(fmt, raw)
+        return parsers.parse(fmt, raw), fmt
     except parsers.ParseError as exc:
         raise ValidationInputError("Nie można odczytać danych jako {}: {}".format(fmt, exc))
     except Exception as exc:  # malformed files raise all kinds of errors in csv/openpyxl/json
         raise ValidationInputError("Nie można odczytać danych jako {}: {}".format(fmt, exc))
+
+
+def validate_bytes(raw, filename=None, fmt=None, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO):
+    """AED standard: parse + validate raw file content (verified AED rules)."""
+    rows, fmt = parse_bytes(raw, filename=filename, fmt=fmt)
     return validate_rows(rows, strict=strict, max_invalid_ratio=max_invalid_ratio, fmt=fmt)
+
+
+def uses_aed_engine(standard):
+    """aed-pl (and test standards without a data definition) use the verified AED rules (DEC-019)."""
+    return standard is None or standard.code == "aed-pl" or not standard.fields
+
+
+def validate_for_standard(raw, standard=None, filename=None, fmt=None, strict=False, collect_invalid=False):
+    """Single entry point for every standard: AED rules for aed-pl, the generic engine for the others."""
+    max_ratio = standard.max_invalid_ratio if standard is not None else DEFAULT_MAX_INVALID_RATIO
+    if uses_aed_engine(standard):
+        rows, fmt = parse_bytes(raw, filename=filename, fmt=fmt)
+        return validate_rows(rows, strict=strict, max_invalid_ratio=max_ratio, fmt=fmt, collect_invalid=collect_invalid)
+    from mcod.aed import generic
+
+    rows, fmt = parse_bytes(raw, filename=filename, fmt=fmt)
+    return generic.validate_rows(rows, standard.spec(), strict=strict, max_invalid_ratio=max_ratio, fmt=fmt,
+                                 collect_invalid=collect_invalid)
 
 
 def new_report_id():
     return str(uuid.uuid4())
 
 
-def unreadable_report(message, fmt=None, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO):
+def unreadable_report(message, fmt=None, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO, standard_code="aed-pl"):
     """Report stored for resources whose data cannot be read (blocking)."""
     return {
-        "standard": "aed-pl", "schema_version": SCHEMA_VERSION, "format": fmt, "strict": False,
+        "standard": standard_code, "schema_version": SCHEMA_VERSION, "format": fmt, "strict": False,
         "valid": False, "status": "error", "blocking": True, "blocking_reasons": [message],
         "rows_total": 0, "rows_valid": 0, "rows_invalid": 0, "invalid_ratio": None,
         "max_invalid_ratio": max_invalid_ratio, "column_mapping": {}, "unknown_columns": [],

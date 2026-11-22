@@ -240,9 +240,7 @@ def standard_errors_for_form(form, data):
         raw = upload.read()
         upload.seek(position)
         try:
-            report = validation.validate_bytes(
-                raw, filename=getattr(upload, "name", None), max_invalid_ratio=standard.max_invalid_ratio
-            )
+            report = validation.validate_for_standard(raw, standard=standard, filename=getattr(upload, "name", None))
         except validation.ValidationInputError as exc:
             return [header, str(exc)]
         if report["blocking"]:

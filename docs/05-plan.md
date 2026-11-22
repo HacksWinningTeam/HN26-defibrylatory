@@ -53,7 +53,7 @@ Second standard "Żłobki i kluby dziecięce" proves the engine is not AED-only.
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `T16` | Standards defined as data (fields, synonyms, merge rule) + JSON loader | Backend (fork) | No | `T13` | 1 h | `VERIFIED` | [T16](tasks/T16-data-defined-standards.md) |
-| `T17` | Generic validation + `/1.4/standards/{code}/…` API | Backend (fork) | No | `T16` | 1 h | `TODO` | [T17](tasks/T17-generic-validation.md) |
+| `T17` | Generic validation + `/1.4/standards/{code}/…` API | Backend (fork) | No | `T16` | 1 h | `VERIFIED` | [T17](tasks/T17-generic-validation.md) |
 | `T18` | Generic aggregation + nursery datasets from dane.gov.pl | Backend (fork) | No | `T17` | 1 h | `TODO` | [T18](tasks/T18-generic-aggregation-nurseries.md) |
 | `T19` | Universal standards on the server + demo script | Infra | No | `T18` | 0.5 h | `TODO` | [T19](tasks/T19-universal-demo-server.md) |
 
