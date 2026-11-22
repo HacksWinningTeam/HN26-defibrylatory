@@ -33,6 +33,11 @@ def on_upstream_task_done(sender=None, task_id=None, task=None, args=None, kwarg
 
         resource_id = ResourceFile.objects.filter(pk=int(args[0])).values_list("resource_id", flat=True).first()
     if resource_id:
+        from mcod.aed.aggregate import NATIONAL_CSV_EXT
+        from mcod.resources.models import Resource as _Resource
+
+        if _Resource.raw.filter(pk=resource_id, ext_ident=NATIONAL_CSV_EXT).exists():
+            configure_national_csv_task.apply_async(args=(resource_id,), countdown=5)
         from mcod.aed.resource_validation import standard_for_resource
         from mcod.resources.models import Resource
 
@@ -43,3 +48,19 @@ def on_upstream_task_done(sender=None, task_id=None, task=None, args=None, kwarg
 
 def connect_upstream_hooks():
     task_postrun.connect(on_upstream_task_done, weak=False, dispatch_uid="mcod_aed_validate_after_upstream")
+
+
+@extended_shared_task(ignore_result=True, name="mcod.aed.tasks.aggregate_task")
+def aggregate_task(triggered_by="celery"):
+    """Run "Agregacja AED" in the background (admin button)."""
+    from mcod.aed.aggregate import run_aggregation
+
+    return run_aggregation(triggered_by=triggered_by).pk
+
+
+@extended_shared_task(ignore_result=True, name="mcod.aed.tasks.configure_national_csv_task")
+def configure_national_csv_task(resource_id):
+    """Common CSV processed by the portal -> make sure the Tabela/Mapa previews are configured."""
+    from mcod.aed.publishing import ensure_map_columns
+
+    return ensure_map_columns(resource_id)

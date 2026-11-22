@@ -185,7 +185,7 @@ def _check_value(spec, value):
     return None
 
 
-def validate_rows(rows, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO, fmt=None):
+def validate_rows(rows, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO, fmt=None, collect_invalid=False):
     """Validate parsed rows (`parsers.RawRow`) -> report dict (attributes of `aed_validation`)."""
     columns = []
     seen = set()
@@ -325,7 +325,7 @@ def validate_rows(rows, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATI
             "message": _message(code, field, example["value"], warning=True),
             "rows": example["rows"],
         })
-    return {
+    report = {
         "standard": "aed-pl",
         "schema_version": SCHEMA_VERSION,
         "format": fmt,
@@ -348,6 +348,9 @@ def validate_rows(rows, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATI
         "errors_truncated": error_count > len(errors),
         "warnings": warning_list,
     }
+    if collect_invalid:
+        report["_invalid_rows"] = invalid_rows  # 1-based row numbers (internal, used by aggregation)
+    return report
 
 
 def validate_bytes(raw, filename=None, fmt=None, strict=False, max_invalid_ratio=DEFAULT_MAX_INVALID_RATIO):

@@ -71,6 +71,11 @@ as datasets of their own institutions with "Standard danych" = aed-pl, plus Open
 `WARSAW_API_TOKEN` is read by `fork-compose.sh` from the repo's untracked `.env` (recreate admin/api/celery after changing it).
 Legionowo's original file is blocked by validation; a corrected copy (`mcod_aed/fixtures/corrected/`) is published next to it (DEC-016).
 
+Aggregation (T13): `docker exec mcod-admin python manage.py aed_aggregate` or admin *Standardy danych* → "Uruchom agregację"
+(Celery) → all published, non-blocked resources of `aed-pl` datasets → `AedSourceRecord` → merge → `AedDevice` → common dataset
+"Defibrylatory AED – zbiór ogólnopolski" (CSV with Tabela/Mapa, XLSX, GeoJSON, schema, API link). API: `/1.4/aed/devices`
+(GeoJSON, `bbox`, `q`), `/1.4/aed/sources` (per-source report). Datasets marked as demo must stay drafts (never aggregated).
+
 Validation API (T14): `POST /1.4/aed/validate` (multipart `file`, raw body, or JSON `{"url"}` / `{"resource_id"}`; `?strict=true`), `GET` = help;
 `GET /1.4/resources/{id}/standard-validation` = stored result. Samples: `docs/demo/samples/*.csv`.
 

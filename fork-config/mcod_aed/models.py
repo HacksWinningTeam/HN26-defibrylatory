@@ -119,3 +119,70 @@ class ResourceStandardValidation(models.Model):
             "warnings": self.warnings,
             "validated_at": self.validated_at.strftime("%Y-%m-%dT%H:%M:%SZ") if self.validated_at else None,
         }
+
+
+# --- Aggregation (T13) -----------------------------------------------------------------------
+
+
+class AedImportRun(models.Model):
+    """One run of "Agregacja AED" (command, Celery task or admin button)."""
+
+    STATUS_RUNNING = "running"
+    STATUS_OK = "ok"
+    STATUS_ERROR = "error"
+    STATUS_CHOICES = ((STATUS_RUNNING, "w toku"), (STATUS_OK, "zakończona"), (STATUS_ERROR, "błąd"))
+
+    standard = models.ForeignKey(DataStandard, on_delete=models.CASCADE, related_name="runs")
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_RUNNING)
+    triggered_by = models.CharField(max_length=100, blank=True)
+    sources_count = models.PositiveIntegerField(default=0)
+    records_count = models.PositiveIntegerField(default=0)
+    devices_count = models.PositiveIntegerField(default=0)
+    report = JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "agregacja AED"
+        verbose_name_plural = "agregacje AED"
+        ordering = ("-started_at",)
+
+    def __str__(self):
+        return "Agregacja {} ({})".format(self.started_at.strftime("%Y-%m-%d %H:%M") if self.started_at else "-", self.status)
+
+
+class AedDevice(models.Model):
+    """One AED of the common dataset (merged from all sources)."""
+
+    standard = models.ForeignKey(DataStandard, on_delete=models.CASCADE, related_name="devices")
+    id_aed = models.CharField(max_length=64, unique=True)
+    data = JSONField(default=dict)
+    lat = models.FloatField()
+    lon = models.FloatField()
+    sources_count = models.PositiveSmallIntegerField(default=1)
+    sources = JSONField(default=list, blank=True)  # [{nazwa, typ, url, dataset_id}]
+
+    class Meta:
+        verbose_name = "urządzenie AED (zbiór zbiorczy)"
+        verbose_name_plural = "urządzenia AED (zbiór zbiorczy)"
+
+    def __str__(self):
+        return "{} {}".format(self.id_aed, self.data.get("nazwa", ""))
+
+
+class AedSourceRecord(models.Model):
+    """One row of a source resource converted to the standard structure."""
+
+    resource = models.ForeignKey("resources.Resource", on_delete=models.CASCADE, related_name="aed_records")
+    dataset_id = models.IntegerField(db_index=True)
+    row_id = models.CharField(max_length=120)
+    data = JSONField(default=dict)
+    lat = models.FloatField(null=True, blank=True)
+    lon = models.FloatField(null=True, blank=True)
+    valid = models.BooleanField(default=True)
+    quality_flags = JSONField(default=list, blank=True)
+    device = models.ForeignKey(AedDevice, null=True, blank=True, on_delete=models.SET_NULL, related_name="records")
+
+    class Meta:
+        verbose_name = "rekord źródłowy AED"
+        verbose_name_plural = "rekordy źródłowe AED"

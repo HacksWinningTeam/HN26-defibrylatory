@@ -181,7 +181,7 @@ def ensure_api_resource(dataset, ext_ident, title, description, link, position=1
 
     user = admin_user()
     res = Resource.raw.filter(dataset=dataset, ext_ident=ext_ident, is_removed=False).first()
-    if res is not None and not (res.link and not res.is_link_internal):
+    if res is not None and not res.link:
         res.delete()  # kind changed (file -> link)
         res = None
     fields = dict(title=title, description=description, position=position, status="published",
@@ -198,3 +198,38 @@ def ensure_api_resource(dataset, ext_ident, title, description, link, position=1
         setattr(res, key, value)
     res.save()
     return res, "updated" if link_changed else "unchanged"
+
+
+GEO_COLUMNS = {"label": "nazwa", "b": "szerokosc_geograficzna", "l": "dlugosc_geograficzna"}
+
+
+def ensure_map_columns(resource_id):
+    """Common CSV: all columns `string` (the portal guesses boolean/integer from the first rows and then
+    rejects empty cells), coordinates `number`, map columns label/b/l; re-index when changed (T06 logic)."""
+    from mcod.core.api.search.tasks import update_with_related_task
+    from mcod.resources.models import Resource
+
+    res = Resource.raw.get(pk=resource_id)
+    tds = res.tabular_data_schema
+    if not tds or not tds.get("fields"):
+        return False
+    wanted = {col: key for key, col in GEO_COLUMNS.items()}
+    new_tds = dict(tds)
+    new_tds["fields"], new_tds["geo"] = [], {}
+    for idx, f in enumerate(tds["fields"]):
+        f = {k: v for k, v in f.items() if k != "geo"}
+        f["type"], f["format"] = "string", "default"
+        key = wanted.get(f.get("name"))
+        if key:
+            f["geo"] = key
+            if key in ("b", "l"):
+                f["type"] = "number"
+            new_tds["geo"][key] = {"col_name": f["name"], "col_index": idx}
+        new_tds["fields"].append(f)
+    if new_tds == tds and res.has_map:
+        return False
+    Resource.raw.filter(pk=resource_id).update(tabular_data_schema=new_tds)
+    Resource.raw.get(pk=resource_id).revalidate_tabular_data(apply_on_commit=False)
+    update_with_related_task.apply(args=("resources", "Resource", resource_id))
+    update_with_related_task.apply(args=("datasets", "Dataset", res.dataset_id))
+    return True

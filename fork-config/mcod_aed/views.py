@@ -238,3 +238,134 @@ ROUTES += [
     ("/aed/validate", AedValidateView()),
     ("/resources/{id:int}/standard-validation", ResourceStandardValidationView()),
 ]
+
+
+# --- Common dataset (T13) --------------------------------------------------------------------
+
+DEVICE_PROPERTIES = (
+    "id_aed", "nazwa", "adres", "miejscowosc", "opis_lokalizacji", "w_budynku", "pietro", "dostep",
+    "godziny_dostepnosci", "zabezpieczenie", "status", "dysponent", "telefon_kontaktowy", "data_aktualizacji",
+)
+_devices_cache = {}
+
+
+def _address(data):
+    street = " ".join(str(p) for p in (data.get("cecha_ulicy"), data.get("nazwa_ulicy")) if p)
+    number = data.get("nr_budynku") or ""
+    if number and data.get("nr_lokalu"):
+        number = "{}/{}".format(number, data["nr_lokalu"])
+    line1 = " ".join(p for p in (street, number) if p)
+    line2 = " ".join(str(p) for p in (data.get("kod_pocztowy"), data.get("miejscowosc")) if p)
+    if not street:
+        return None
+    return ", ".join(p for p in (line1, line2) if p) or None
+
+
+def device_feature(device):
+    data = device.data
+    props = {}
+    for name in DEVICE_PROPERTIES:
+        value = _address(data) if name == "adres" else data.get(name)
+        props[name] = None if value in ("", None) else value
+    props["id_aed"] = device.id_aed
+    props["zrodla"] = [{k: s.get(k) for k in ("nazwa", "typ", "url")} for s in (device.sources or [])]
+    return {
+        "type": "Feature",
+        "id": device.id_aed,
+        "geometry": {"type": "Point", "coordinates": [device.lon, device.lat]},
+        "properties": props,
+    }
+
+
+def _latest_run():
+    from mcod.aed.models import AedImportRun
+
+    return AedImportRun.objects.filter(status=AedImportRun.STATUS_OK).order_by("-pk").first()
+
+
+class AedDevicesView:
+    """GET /1.4/aed/devices[?bbox=minLon,minLat,maxLon,maxLat&q=] — common dataset as GeoJSON (map)."""
+
+    def on_get(self, req, resp, **kwargs):
+        import json
+
+        from mcod.aed.models import AedDevice
+        from mcod.aed.exports import LICENSE
+
+        run = _latest_run()
+        bbox_param = req.get_param("bbox")
+        query = (req.get_param("q") or "").strip().lower()
+        cache_key = (run.pk if run else 0, bbox_param, query)
+        body = _devices_cache.get(cache_key)
+        if body is None:
+            qs = AedDevice.objects.order_by("id_aed")
+            if bbox_param:
+                try:
+                    min_lon, min_lat, max_lon, max_lat = [float(v) for v in bbox_param.split(",")]
+                except ValueError:
+                    return _error(resp, req, falcon.HTTP_400, "400_bad_request", "400 Bad Request",
+                                  "bbox = minLon,minLat,maxLon,maxLat")
+                qs = qs.filter(lon__gte=min_lon, lon__lte=max_lon, lat__gte=min_lat, lat__lte=max_lat)
+            features = [device_feature(d) for d in qs.iterator()]
+            if query:
+                features = [f for f in features if query in " ".join(
+                    str(f["properties"].get(k) or "") for k in ("nazwa", "adres", "miejscowosc", "opis_lokalizacji")).lower()]
+            body = json.dumps({
+                "type": "FeatureCollection",
+                "meta": {
+                    "count": len(features),
+                    "generated_at": run.finished_at.strftime("%Y-%m-%dT%H:%M:%SZ") if run and run.finished_at else None,
+                    "license": LICENSE,
+                    "standard": "aed-pl",
+                },
+                "features": features,
+            }, ensure_ascii=False).encode("utf-8")
+            if len(_devices_cache) > 20:
+                _devices_cache.clear()
+            _devices_cache[cache_key] = body
+        resp.status = falcon.HTTP_200
+        resp.content_type = "application/geo+json; charset=utf-8"
+        resp.data = body
+
+
+class AedSourcesView:
+    """GET /1.4/aed/sources — datasets aggregated into the common dataset, with coverage (last run)."""
+
+    def on_get(self, req, resp, **kwargs):
+        from mcod.aed.models import AedDevice
+
+        run = _latest_run()
+        root = _api_root(req)
+        if run is None:
+            jsonapi.send(resp, req, [], count=0, aed_count=AedDevice.objects.count(), updated_at=None)
+            return
+        report = run.report
+        data = []
+        for entry in report.get("sources", []):
+            attrs = dict(entry)
+            attrs["title"] = entry["dataset_title"]
+            attrs["record_count"] = entry.get("records", 0)
+            data.append(jsonapi.resource_object(
+                "aed_source", entry["resource_id"], attrs,
+                self_link="{}/1.4/resources/{}".format(root, entry["resource_id"]),
+                relationships={"dataset": {"data": {"type": "dataset", "id": str(entry["dataset_id"])},
+                                           "links": {"related": "{}/1.4/datasets/{}".format(root, entry["dataset_id"])}}},
+            ))
+        jsonapi.send(
+            resp, req, data,
+            count=len(data),
+            aed_count=report.get("devices", 0),
+            multi_source_aed_count=report.get("multi_source_devices", 0),
+            record_count=report.get("records", 0),
+            records_included=report.get("records_included", 0),
+            updated_at=run.finished_at.strftime("%Y-%m-%dT%H:%M:%SZ") if run.finished_at else None,
+            run_id=run.pk,
+            standard=report.get("standard"),
+            national_dataset=report.get("national_dataset"),
+        )
+
+
+ROUTES += [
+    ("/aed/devices", AedDevicesView()),
+    ("/aed/sources", AedSourcesView()),
+]
