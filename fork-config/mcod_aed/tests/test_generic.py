@@ -183,3 +183,84 @@ class StandardsApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GenericAggregationTests(unittest.TestCase):
+    def test_effective_format(self):
+        from mcod.aed.importer import effective_format
+
+        self.assertEqual(effective_format("xlsx", "https://x/download/rejestr_zlobkow_tychy.csv"), "csv")
+        self.assertEqual(effective_format("xlsx", "https://x/download/rejestr.rdf"), "rdf")
+        self.assertEqual(effective_format("csv", "https://api.dane.gov.pl/resources/1,x/file"), "csv")
+
+    def test_complete_record_and_merge_by_key(self):
+        from mcod.aed import merge
+        from datetime import date
+
+        s = spec()
+        data = generic.complete_record({"nazwa": "Żłobek A", "adres": "ul. Jasna 5, 43-100 Tychy", "liczba_miejsc": 20},
+                                       s, 3, "dgp-1", "Urząd Miasta Tychy", date(2026, 11, 22))
+        self.assertEqual((data["ulica"], data["nr_budynku"], data["kod_pocztowy"], data["miejscowosc"]),
+                         ("ul. Jasna", "5", "43-100", "Tychy"))
+        self.assertEqual((data["id_placowki"], data["zrodlo"], data["data_aktualizacji"]),
+                         ("dgp-1-3", "Urząd Miasta Tychy", "2026-11-22"))
+        town = generic.complete_record({"miejscowosc": "Tychy, miasto"}, s, 1, "k", "n", None)
+        self.assertEqual(town["miejscowosc"], "Tychy")
+
+        def rec(resource_id, **d):
+            return merge.Rec(resource_id=resource_id, kind="official", source_key="r%d" % resource_id, row_id="1", data=d)
+
+        merged = generic.merge_by_key([
+            rec(1, nazwa="Żłobek A", regon="276115858", zrodlo="Gmina", liczba_miejsc=20),
+            rec(2, nazwa="ŻŁOBEK A", regon="276115858", zrodlo="GZM", telefon="123"),          # same REGON + name
+            rec(3, nazwa="Żłobek B", miejscowosc="Tychy", ulica="ul. Jasna", nr_budynku="5", zrodlo="Gmina"),
+            rec(4, nazwa="Żłobek B", miejscowosc="Tychy", ulica="ul. Jasna", nr_budynku="5", zrodlo="GZM"),  # same address
+            rec(1, nazwa="Żłobek A", regon="276115858", zrodlo="Gmina"),                          # same resource: never merged
+        ], s)
+        sizes = sorted(len(group) for _, group in merged)
+        self.assertEqual(sizes, [1, 2, 2])
+        first = next(d for d, g in merged if len(g) == 2 and d.get("regon"))
+        self.assertEqual((first["liczba_miejsc"], first["telefon"], first["zrodlo"]), (20, "123", "Gmina; GZM"))
+
+    def test_generic_run_publishes_nothing_but_builds_objects(self):
+        from django.contrib.auth import get_user_model
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from mcod.aed import integration
+        from mcod.aed.aggregate import run_aggregation
+        from mcod.aed.models import AedDevice, DataStandard
+        from mcod.aed.standards import load_standard
+        from mcod.datasets.models import Dataset
+        from mcod.organizations.models import Organization
+        from mcod.resources.models import Resource, ResourceFile
+
+        user = get_user_model().objects.filter(is_superuser=True).first()
+        with open(os.path.join(STANDARDS_DIR, "zlobki-pl.json"), encoding="utf-8") as fh:
+            definition = json.load(fh)
+        try:
+            with transaction.atomic():
+                definition["code"] = "zlobki-t18"
+                standard, _ = load_standard(definition)
+                for name in ("zlobki-valid-demo.csv", "zlobki-legacy-demo.csv", "zlobki-invalid-demo.csv"):
+                    ds = Dataset.objects.create(title="T18 " + name, organization=Organization.objects.first(),
+                                                created_by=user, notes="t", status="published")
+                    integration.save_dataset_standard(ds, standard, revalidate=False)
+                    res = Resource.objects.create(title="T18 " + name, dataset=ds, created_by=user,
+                                                  status="published", description="t")
+                    ResourceFile.objects.create(resource=res, is_main=True,
+                                                file=SimpleUploadedFile(name, sample(name), content_type="text/csv"))
+                run = run_aggregation(triggered_by="test", publish=False, standard=DataStandard.objects.get(code="zlobki-t18"))
+                self.assertEqual(run.status, "ok")
+                by_title = {s["dataset_title"]: s for s in run.report["sources"]}
+                self.assertEqual(by_title["T18 zlobki-valid-demo.csv"]["records"], 2)
+                self.assertEqual(by_title["T18 zlobki-legacy-demo.csv"]["records"], 2)
+                self.assertEqual(by_title["T18 zlobki-invalid-demo.csv"]["records"], 0)  # all rows invalid
+                devices = AedDevice.objects.filter(standard__code="zlobki-t18")
+                self.assertEqual(devices.count(), 4)
+                legacy = next(d for d in devices if d.data.get("miejscowosc") == "Inowrocław")
+                self.assertTrue(legacy.id_aed.startswith("PL-ZLOBKI-T18-"))
+                self.assertEqual(legacy.data["id_placowki"], legacy.id_aed)
+                self.assertEqual(legacy.data["liczba_miejsc"] in (80, 64), True)
+                raise _Rollback
+        except _Rollback:
+            pass

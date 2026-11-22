@@ -167,29 +167,28 @@ if __name__ == "__main__":
 class AggregationDispatchTests(unittest.TestCase):
     """Regression: the admin button of one standard must never run another standard's aggregation."""
 
-    def test_only_supported_standards_are_aggregated(self):
+    def test_each_button_queues_its_own_standard(self):
         from unittest import mock
 
         from django.contrib.messages.storage.fallback import FallbackStorage
         from django.test import RequestFactory
 
         from mcod.aed import admin as aed_admin
-        from mcod.aed.aggregate import run_aggregation, supports_aggregation
+        from mcod.aed.aggregate import supports_aggregation, uses_aed_engine
         from mcod.aed.models import DataStandard
 
         aed = DataStandard.objects.get(code="aed-pl")
-        zlobki_model = DataStandard(code="zlobki-x", name="Żłobki", version="1", fields=[{"name": "nazwa"}])
-        self.assertTrue(supports_aggregation(aed))
-        self.assertFalse(supports_aggregation(zlobki_model))
-        with self.assertRaises(ValueError):
-            run_aggregation(triggered_by="test", standard=zlobki_model)
+        zlobki = DataStandard.objects.get(code="zlobki-pl")
+        self.assertTrue(supports_aggregation(aed) and uses_aed_engine(aed))
+        self.assertTrue(supports_aggregation(zlobki))
+        self.assertFalse(uses_aed_engine(zlobki))  # generic engine (T18)
 
         request = RequestFactory().get("/")
         request.user = mock.Mock(email="t@example.org")
         request.session = {}
         request._messages = FallbackStorage(request)
         with mock.patch("mcod.aed.tasks.aggregate_task.apply_async") as queued:
-            self.assertFalse(aed_admin.queue_aggregation(request, zlobki_model))
-            queued.assert_not_called()
+            self.assertTrue(aed_admin.queue_aggregation(request, zlobki))
+            self.assertEqual(queued.call_args[1]["kwargs"]["standard_code"], "zlobki-pl")
             self.assertTrue(aed_admin.queue_aggregation(request, aed))
             self.assertEqual(queued.call_args[1]["kwargs"]["standard_code"], "aed-pl")

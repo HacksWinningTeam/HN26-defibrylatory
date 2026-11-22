@@ -1,33 +1,410 @@
 {
   "code": "zlobki-pl",
   "name": "Żłobki i kluby dziecięce – wzorcowy zakres danych",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Jednolity zakres danych o żłobkach, klubach dziecięcych i dziennych opiekunach publikowanych przez gminy (rejestry żłobków i klubów dziecięcych). Jeden wiersz = jedna placówka.",
   "fields": [
-    {"name": "id_placowki", "label": "Identyfikator placówki", "type": "string", "obligation": "wymagane", "description": "Stały identyfikator placówki w zbiorze dysponenta.", "example": "TYCHY-Z-001", "max_length": 64, "derivable": "numer wiersza", "synonyms": ["id", "lp", "l_p", "identyfikator"]},
-    {"name": "nazwa", "label": "Nazwa placówki", "type": "string", "obligation": "wymagane", "description": "Pełna nazwa żłobka / klubu dziecięcego.", "example": "Żłobek Miejski nr 1", "max_length": 255, "synonyms": ["nazwa_zlobka", "nazwa_placowki", "nazwa_zlobka_klubu", "nazwa_podmiotu", "nazwa_instytucji", "nazwa_zlobka_lub_klubu_dzieciecego", "nazwa_zlobka_klubu_dzieciecego"]},
-    {"name": "typ", "label": "Rodzaj placówki", "type": "string", "obligation": "zalecane", "description": "Forma opieki: żłobek, klub dziecięcy albo dzienny opiekun.", "example": "zlobek", "allowed_values": [{"value": "zlobek", "label": "żłobek"}, {"value": "klub_dzieciecy", "label": "klub dziecięcy"}, {"value": "dzienny_opiekun", "label": "dzienny opiekun"}], "synonyms": ["rodzaj", "forma_opieki", "rodzaj_placowki"]},
-    {"name": "podmiot_prowadzacy", "label": "Podmiot prowadzący", "type": "string", "obligation": "wymagane", "description": "Nazwa podmiotu prowadzącego placówkę (gmina, firma, stowarzyszenie, osoba fizyczna).", "example": "Gmina Miasta Tychy", "synonyms": ["nazwa_podmiotu_prowadzacego", "prowadzacy", "organ_prowadzacy", "podmiot", "nazwa_podmiotu_prowadzacego_zlobek"]},
-    {"name": "miejscowosc", "label": "Miejscowość", "type": "string", "obligation": "wymagane", "description": "Miejscowość, w której działa placówka.", "example": "Tychy", "synonyms": ["miasto", "city", "miejscowo", "miejscowosc_placowki"]},
-    {"name": "ulica", "label": "Ulica", "type": "string", "obligation": "zalecane", "description": "Ulica (z cechą, np. „ul. Jasna”).", "example": "ul. Jasna", "synonyms": ["adres_ulica", "ul", "ulica_placowki"]},
-    {"name": "nr_budynku", "label": "Numer budynku", "type": "string", "obligation": "zalecane", "description": "Numer budynku.", "example": "12", "synonyms": ["adres_nr", "numer_budynku", "nr_domu", "numer_domu"]},
-    {"name": "nr_lokalu", "label": "Numer lokalu", "type": "string", "obligation": "opcjonalne", "description": "Numer lokalu.", "synonyms": ["numer_lokalu"]},
-    {"name": "kod_pocztowy", "label": "Kod pocztowy", "type": "string", "obligation": "zalecane", "description": "Kod pocztowy w formacie 00-000.", "example": "43-100", "pattern": "^\\d{2}-\\d{3}$", "synonyms": ["kod", "kod_poczt"]},
-    {"name": "adres", "label": "Adres (pełny)", "type": "string", "obligation": "opcjonalne", "description": "Pełny adres w jednym polu – gdy brak rozbicia na ulicę i numer.", "example": "ul. Jasna 12, 43-100 Tychy", "synonyms": ["address", "adres_placowki", "adres_zlobka"]},
-    {"name": "liczba_miejsc", "label": "Liczba miejsc", "type": "integer", "obligation": "wymagane", "description": "Maksymalna liczba miejsc (dzieci) w placówce.", "example": 60, "minimum": 0, "maximum": 1000, "synonyms": ["miejsca", "max_liczba_miejsc", "max_liczba_miejsc_w_obku", "max_liczba_miejsc_w_zlobku", "liczba_miejsc_w_zlobku", "liczba_dzieci"]},
-    {"name": "regon", "label": "REGON", "type": "string", "obligation": "zalecane", "description": "REGON podmiotu prowadzącego lub placówki (9 albo 14 cyfr).", "example": "276115858", "pattern": "^\\d{9}(\\d{5})?$", "synonyms": ["nr_regon", "numer_regon"]},
-    {"name": "nip", "label": "NIP", "type": "string", "obligation": "opcjonalne", "description": "NIP podmiotu prowadzącego (10 cyfr, bez kresek).", "example": "6462933516", "pattern": "^\\d{10}$", "synonyms": ["nr_nip", "numer_nip"]},
-    {"name": "telefon", "label": "Telefon", "type": "string", "obligation": "opcjonalne", "description": "Telefon kontaktowy.", "example": "+48 32 000 00 00", "synonyms": ["nr_telefonu", "tel", "numer_telefonu", "telefon_kontaktowy"]},
-    {"name": "email", "label": "E-mail", "type": "string", "obligation": "opcjonalne", "description": "Adres e-mail.", "example": "zlobek@example.pl", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", "synonyms": ["adres_e_mail", "e_mail", "adres_email", "mail"]},
-    {"name": "szerokosc_geograficzna", "label": "Szerokość geograficzna", "type": "number", "obligation": "opcjonalne", "description": "WGS84, stopnie dziesiętne.", "example": 50.1218, "minimum": 49.0, "maximum": 54.9, "synonyms": ["lat", "latitude", "szerokosc", "szeroko_geograficzna_podmiot", "szeroko_geograficzna_podmiotu", "y"]},
-    {"name": "dlugosc_geograficzna", "label": "Długość geograficzna", "type": "number", "obligation": "opcjonalne", "description": "WGS84, stopnie dziesiętne.", "example": 18.9850, "minimum": 14.1, "maximum": 24.2, "synonyms": ["lon", "lng", "longitude", "dlugosc", "dugo_geograficzna_podmiotu", "dugo_geograficzna_podmiot", "x"]},
-    {"name": "dostosowany_dla_niepelnosprawnych", "label": "Dostosowany do potrzeb dzieci z niepełnosprawnościami", "type": "boolean", "obligation": "opcjonalne", "description": "Czy placówka jest dostosowana do potrzeb dzieci z niepełnosprawnościami.", "example": true, "synonyms": ["dostosowany_do_potrzeb_dziec", "dostosowany_do_potrzeb_dzieci_niepelnosprawnych", "dostosowanie_do_potrzeb_dzieci_niepelnosprawnych"]},
-    {"name": "nr_w_rejestrze", "label": "Numer w rejestrze", "type": "string", "obligation": "opcjonalne", "description": "Numer wpisu do rejestru żłobków i klubów dziecięcych.", "example": "1/2024", "synonyms": ["numer_w_rejestrze", "nr_rejestru", "numer_rejestru", "numer_wpisu", "nr_wpisu", "numer_akt_sprawy"]},
-    {"name": "data_wpisu", "label": "Data wpisu do rejestru", "type": "date", "obligation": "opcjonalne", "description": "RRRR-MM-DD.", "example": "2024-03-01", "synonyms": ["data_wpisu_do_rejestru"]},
-    {"name": "data_aktualizacji", "label": "Data aktualizacji", "type": "date", "obligation": "wymagane", "description": "Data ostatniej aktualizacji rekordu (RRRR-MM-DD).", "example": "2026-11-22", "derivable": "data danych zasobu", "synonyms": ["data_wprowadzonych_zmian", "data_zmiany", "aktualizacja"]},
-    {"name": "zrodlo", "label": "Źródło", "type": "string", "obligation": "wymagane", "description": "Dysponent danych / zbiór źródłowy.", "example": "Urząd Miasta Tychy", "derivable": "nazwa instytucji / zbioru", "synonyms": ["zrodlo_danych"]}
+    {
+      "name": "id_placowki",
+      "label": "Identyfikator placówki",
+      "type": "string",
+      "obligation": "wymagane",
+      "description": "Stały identyfikator placówki w zbiorze dysponenta.",
+      "example": "TYCHY-Z-001",
+      "max_length": 64,
+      "derivable": "numer wiersza",
+      "synonyms": [
+        "id",
+        "lp",
+        "l_p",
+        "identyfikator"
+      ]
+    },
+    {
+      "name": "nazwa",
+      "label": "Nazwa placówki",
+      "type": "string",
+      "obligation": "wymagane",
+      "description": "Pełna nazwa żłobka / klubu dziecięcego.",
+      "example": "Żłobek Miejski nr 1",
+      "max_length": 255,
+      "synonyms": [
+        "nazwa_zlobka",
+        "nazwa_placowki",
+        "nazwa_zlobka_klubu",
+        "nazwa_podmiotu",
+        "nazwa_instytucji",
+        "nazwa_zlobka_lub_klubu_dzieciecego",
+        "nazwa_zlobka_klubu_dzieciecego",
+        "businessPlaceName"
+      ]
+    },
+    {
+      "name": "typ",
+      "label": "Rodzaj placówki",
+      "type": "string",
+      "obligation": "zalecane",
+      "description": "Forma opieki: żłobek, klub dziecięcy albo dzienny opiekun.",
+      "example": "zlobek",
+      "allowed_values": [
+        {
+          "value": "zlobek",
+          "label": "żłobek",
+          "aliases": [
+            "NURSERY"
+          ]
+        },
+        {
+          "value": "klub_dzieciecy",
+          "label": "klub dziecięcy",
+          "aliases": [
+            "KIDS_CLUB",
+            "CHILDREN_CLUB",
+            "CHILD_CLUB"
+          ]
+        },
+        {
+          "value": "dzienny_opiekun",
+          "label": "dzienny opiekun",
+          "aliases": [
+            "DAY_CARER",
+            "DAILY_CARER",
+            "DAY_CARE"
+          ]
+        }
+      ],
+      "synonyms": [
+        "rodzaj",
+        "forma_opieki",
+        "rodzaj_placowki",
+        "businessPlaceInstitutionType"
+      ]
+    },
+    {
+      "name": "podmiot_prowadzacy",
+      "label": "Podmiot prowadzący",
+      "type": "string",
+      "obligation": "wymagane",
+      "description": "Nazwa podmiotu prowadzącego placówkę (gmina, firma, stowarzyszenie, osoba fizyczna).",
+      "example": "Gmina Miasta Tychy",
+      "synonyms": [
+        "nazwa_podmiotu_prowadzacego",
+        "prowadzacy",
+        "organ_prowadzacy",
+        "podmiot",
+        "nazwa_podmiotu_prowadzacego_zlobek",
+        "operatorName"
+      ]
+    },
+    {
+      "name": "miejscowosc",
+      "label": "Miejscowość",
+      "type": "string",
+      "obligation": "wymagane",
+      "description": "Miejscowość, w której działa placówka.",
+      "example": "Tychy",
+      "synonyms": [
+        "miasto",
+        "city",
+        "miejscowo",
+        "miejscowosc_placowki",
+        "businessPlaceAddressCity"
+      ]
+    },
+    {
+      "name": "ulica",
+      "label": "Ulica",
+      "type": "string",
+      "obligation": "zalecane",
+      "description": "Ulica (z cechą, np. „ul. Jasna”).",
+      "example": "ul. Jasna",
+      "synonyms": [
+        "adres_ulica",
+        "ul",
+        "ulica_placowki",
+        "businessPlaceAddressStreetName"
+      ]
+    },
+    {
+      "name": "nr_budynku",
+      "label": "Numer budynku",
+      "type": "string",
+      "obligation": "zalecane",
+      "description": "Numer budynku.",
+      "example": "12",
+      "synonyms": [
+        "adres_nr",
+        "numer_budynku",
+        "nr_domu",
+        "numer_domu",
+        "businessPlaceAddressBuildingNumber"
+      ]
+    },
+    {
+      "name": "nr_lokalu",
+      "label": "Numer lokalu",
+      "type": "string",
+      "obligation": "opcjonalne",
+      "description": "Numer lokalu.",
+      "synonyms": [
+        "numer_lokalu",
+        "businessPlaceAddressFlatNumber"
+      ]
+    },
+    {
+      "name": "kod_pocztowy",
+      "label": "Kod pocztowy",
+      "type": "string",
+      "obligation": "zalecane",
+      "description": "Kod pocztowy w formacie 00-000.",
+      "example": "43-100",
+      "pattern": "^\\d{2}-\\d{3}$",
+      "synonyms": [
+        "kod",
+        "kod_poczt",
+        "businessPlaceAddressPostalCode"
+      ]
+    },
+    {
+      "name": "adres",
+      "label": "Adres (pełny)",
+      "type": "string",
+      "obligation": "opcjonalne",
+      "description": "Pełny adres w jednym polu – gdy brak rozbicia na ulicę i numer.",
+      "example": "ul. Jasna 12, 43-100 Tychy",
+      "synonyms": [
+        "address",
+        "adres_placowki",
+        "adres_zlobka"
+      ]
+    },
+    {
+      "name": "liczba_miejsc",
+      "label": "Liczba miejsc",
+      "type": "integer",
+      "obligation": "wymagane",
+      "description": "Maksymalna liczba miejsc (dzieci) w placówce.",
+      "example": 60,
+      "minimum": 0,
+      "maximum": 1000,
+      "synonyms": [
+        "miejsca",
+        "max_liczba_miejsc",
+        "max_liczba_miejsc_w_obku",
+        "max_liczba_miejsc_w_zlobku",
+        "liczba_miejsc_w_zlobku",
+        "liczba_dzieci",
+        "businessPlaceTotalSpots"
+      ]
+    },
+    {
+      "name": "regon",
+      "label": "REGON",
+      "type": "string",
+      "obligation": "zalecane",
+      "description": "REGON podmiotu prowadzącego lub placówki (9 albo 14 cyfr).",
+      "example": "276115858",
+      "pattern": "^\\d{9}(\\d{5})?$",
+      "synonyms": [
+        "nr_regon",
+        "numer_regon",
+        "operatorRegon"
+      ]
+    },
+    {
+      "name": "nip",
+      "label": "NIP",
+      "type": "string",
+      "obligation": "opcjonalne",
+      "description": "NIP podmiotu prowadzącego (10 cyfr, bez kresek).",
+      "example": "6462933516",
+      "pattern": "^\\d{10}$",
+      "synonyms": [
+        "nr_nip",
+        "numer_nip",
+        "operatorNip"
+      ]
+    },
+    {
+      "name": "telefon",
+      "label": "Telefon",
+      "type": "string",
+      "obligation": "opcjonalne",
+      "description": "Telefon kontaktowy.",
+      "example": "+48 32 000 00 00",
+      "synonyms": [
+        "nr_telefonu",
+        "tel",
+        "numer_telefonu",
+        "telefon_kontaktowy",
+        "businessPlacePhone"
+      ]
+    },
+    {
+      "name": "email",
+      "label": "E-mail",
+      "type": "string",
+      "obligation": "opcjonalne",
+      "description": "Adres e-mail.",
+      "example": "zlobek@example.pl",
+      "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+      "synonyms": [
+        "adres_e_mail",
+        "e_mail",
+        "adres_email",
+        "mail",
+        "businessPlaceEmail"
+      ]
+    },
+    {
+      "name": "szerokosc_geograficzna",
+      "label": "Szerokość geograficzna",
+      "type": "number",
+      "obligation": "opcjonalne",
+      "description": "WGS84, stopnie dziesiętne.",
+      "example": 50.1218,
+      "minimum": 49.0,
+      "maximum": 54.9,
+      "synonyms": [
+        "lat",
+        "latitude",
+        "szerokosc",
+        "szeroko_geograficzna_podmiot",
+        "szeroko_geograficzna_podmiotu",
+        "y",
+        "szerokosc_geograficzna_podmiot",
+        "szerokosc_geograficzna_podmiotu"
+      ]
+    },
+    {
+      "name": "dlugosc_geograficzna",
+      "label": "Długość geograficzna",
+      "type": "number",
+      "obligation": "opcjonalne",
+      "description": "WGS84, stopnie dziesiętne.",
+      "example": 18.985,
+      "minimum": 14.1,
+      "maximum": 24.2,
+      "synonyms": [
+        "lon",
+        "lng",
+        "longitude",
+        "dlugosc",
+        "dugo_geograficzna_podmiotu",
+        "dugo_geograficzna_podmiot",
+        "x",
+        "dlugosc_geograficzna_podmiotu",
+        "dlugosc_geograficzna_podmiot"
+      ]
+    },
+    {
+      "name": "dostosowany_dla_niepelnosprawnych",
+      "label": "Dostosowany do potrzeb dzieci z niepełnosprawnościami",
+      "type": "boolean",
+      "obligation": "opcjonalne",
+      "description": "Czy placówka jest dostosowana do potrzeb dzieci z niepełnosprawnościami.",
+      "example": true,
+      "synonyms": [
+        "dostosowany_do_potrzeb_dziec",
+        "dostosowany_do_potrzeb_dzieci_niepelnosprawnych",
+        "dostosowanie_do_potrzeb_dzieci_niepelnosprawnych",
+        "dostosowany_do_potrzeb_dzieci",
+        "dostosowany_do_potrzeb_dzieci_niepelnosprawnych_ruchowo",
+        "businessPlaceSpecialNeedsReady"
+      ]
+    },
+    {
+      "name": "nr_w_rejestrze",
+      "label": "Numer w rejestrze",
+      "type": "string",
+      "obligation": "opcjonalne",
+      "description": "Numer wpisu do rejestru żłobków i klubów dziecięcych.",
+      "example": "1/2024",
+      "synonyms": [
+        "numer_w_rejestrze",
+        "nr_rejestru",
+        "numer_rejestru",
+        "numer_wpisu",
+        "nr_wpisu",
+        "numer_akt_sprawy",
+        "operatorRegisterNumber"
+      ]
+    },
+    {
+      "name": "data_wpisu",
+      "label": "Data wpisu do rejestru",
+      "type": "date",
+      "obligation": "opcjonalne",
+      "description": "RRRR-MM-DD.",
+      "example": "2024-03-01",
+      "synonyms": [
+        "data_wpisu_do_rejestru"
+      ]
+    },
+    {
+      "name": "data_aktualizacji",
+      "label": "Data aktualizacji",
+      "type": "date",
+      "obligation": "wymagane",
+      "description": "Data ostatniej aktualizacji rekordu (RRRR-MM-DD).",
+      "example": "2026-11-22",
+      "derivable": "data danych zasobu",
+      "synonyms": [
+        "data_wprowadzonych_zmian",
+        "data_zmiany",
+        "aktualizacja"
+      ]
+    },
+    {
+      "name": "zrodlo",
+      "label": "Źródło",
+      "type": "string",
+      "obligation": "wymagane",
+      "description": "Dysponent danych / zbiór źródłowy.",
+      "example": "Urząd Miasta Tychy",
+      "derivable": "nazwa instytucji / zbioru",
+      "synonyms": [
+        "zrodlo_danych"
+      ]
+    }
   ],
-  "merge": {"strategy": "key", "keys": [["regon", "nazwa"], ["nazwa", "miejscowosc", "ulica", "nr_budynku"]], "note": "ta sama placówka: ten sam REGON i nazwa albo ta sama nazwa i adres"},
-  "discovery": {"queries": ["żłobków", "żłobki", "kluby dziecięce"], "title_pattern": "żłob|klub(y|ów)? dzieci", "exclude_pattern": "miejsca w żłobkach|na 1 tys|wskaźnik|statysty", "max_datasets": 8},
-  "publish": {"title": "Żłobki i kluby dziecięce – zbiór zbiorczy", "description": "Ogólnopolski zbiór żłobków i klubów dziecięcych tworzony wewnątrz portalu przez agregację wszystkich zbiorów oznaczonych standardem danych „Żłobki i kluby dziecięce” (zlobki-pl).", "category": "SOCI", "tags": ["żłobki", "kluby dziecięce", "opieka nad dziećmi"], "label_field": "nazwa", "lat_field": "szerokosc_geograficzna", "lon_field": "dlugosc_geograficzna"}
+  "merge": {
+    "strategy": "key",
+    "keys": [
+      [
+        "regon",
+        "nazwa"
+      ],
+      [
+        "nazwa",
+        "miejscowosc",
+        "ulica",
+        "nr_budynku"
+      ]
+    ],
+    "note": "ta sama placówka: ten sam REGON i nazwa albo ta sama nazwa i adres"
+  },
+  "discovery": {
+    "queries": [
+      "żłobków",
+      "żłobki",
+      "kluby dziecięce"
+    ],
+    "title_pattern": "żłob|klub(y|ów)? dzieci",
+    "exclude_pattern": "miejsca w żłobkach|na 1 tys|wskaźnik|statysty",
+    "max_datasets": 8
+  },
+  "publish": {
+    "title": "Żłobki i kluby dziecięce – zbiór zbiorczy",
+    "description": "Ogólnopolski zbiór żłobków i klubów dziecięcych tworzony wewnątrz portalu przez agregację wszystkich zbiorów oznaczonych standardem danych „Żłobki i kluby dziecięce” (zlobki-pl).",
+    "category": "SOCI",
+    "tags": [
+      "żłobki",
+      "kluby dziecięce",
+      "opieka nad dziećmi"
+    ],
+    "label_field": "nazwa",
+    "lat_field": "szerokosc_geograficzna",
+    "lon_field": "dlugosc_geograficzna"
+  }
 }

@@ -122,8 +122,9 @@ def coerce(field, raw):
         codes = [v["value"] for v in field["allowed_values"]]
         if text not in codes:
             lowered = normalize.norm_key(text)
-            match = next((c for c in codes if normalize.norm_key(c) == lowered or
-                          normalize.norm_key(next((v["label"] for v in field["allowed_values"] if v["value"] == c), "")) == lowered), None)
+            match = next((v["value"] for v in field["allowed_values"]
+                          if lowered in {normalize.norm_key(x) for x in [v["value"], v.get("label", "")] + v.get("aliases", [])}),
+                         None)
             if match is None:
                 return None, "allowed_values", False
             return match, None, True
@@ -288,3 +289,80 @@ def validate_rows(rows, spec, strict=False, max_invalid_ratio=0.2, fmt=None, col
         report["_mapping"] = mapping
     return report
 
+
+
+# --- Conversion + merge for aggregation (T18) ------------------------------------------------------
+
+TOWN_SUFFIX_RE = re.compile(r",\s*(miasto|gmina.*|wieś|obszar wiejski)\s*$", re.IGNORECASE)
+
+
+def complete_record(data, spec, row_index, source_key, source_name, data_date):
+    """Fill what the portal can derive (DEC-015/019): address parts from a full address, id, source, date."""
+    data = dict(data)
+    if data.get("adres") and "ulica" in spec.by_name and not data.get("ulica"):
+        parts = normalize.parse_address(str(data["adres"]))
+        street = " ".join(p for p in (parts.get("cecha_ulicy"), parts.get("nazwa_ulicy")) if p)
+        for field, value in (("ulica", street), ("nr_budynku", parts.get("nr_budynku")),
+                             ("kod_pocztowy", parts.get("kod_pocztowy")), ("miejscowosc", parts.get("miejscowosc"))):
+            if value and field in spec.by_name and not data.get(field):
+                data[field] = value
+    if data.get("miejscowosc"):
+        data["miejscowosc"] = TOWN_SUFFIX_RE.sub("", str(data["miejscowosc"])).strip()
+    derivable = spec.derivable
+    the_id = id_field(spec)
+    if the_id and the_id in derivable and not data.get(the_id):
+        data[the_id] = "{}-{}".format(source_key, row_index)
+    if "zrodlo" in derivable and not data.get("zrodlo"):
+        data["zrodlo"] = source_name
+    if "data_aktualizacji" in derivable and not data.get("data_aktualizacji") and data_date:
+        data["data_aktualizacji"] = data_date.isoformat()
+    return {k: data[k] for k in spec.names if k in data and data[k] not in (None, "")}
+
+
+def _key_value(value):
+    return normalize.norm_key(str(value)) if value not in (None, "") else ""
+
+
+def merge_by_key(recs, spec):
+    """Records describing the same object (same key values, different resources) are merged.
+    -> list of (data, group). Order of precedence = order of recs (first non-empty value wins)."""
+    from mcod.aed.merge import _UnionFind
+
+    keys = (spec.merge or {}).get("keys") or []
+    uf = _UnionFind(len(recs))
+    resources = {i: {r.resource_id} for i, r in enumerate(recs)}
+    for key_index, key_fields in enumerate(keys):
+        seen = {}
+        for i, rec in enumerate(recs):
+            values = tuple(_key_value(rec.data.get(f)) for f in key_fields)
+            if not all(values):
+                continue
+            k = (key_index, values)
+            if k in seen:
+                ri, rj = uf.find(seen[k]), uf.find(i)
+                if ri != rj and not (resources[ri] & resources[rj]):
+                    uf.union(ri, rj)
+                    root = uf.find(ri)
+                    resources[root] = resources[ri] | resources[rj]
+            else:
+                seen[k] = i
+    groups = {}
+    for i, rec in enumerate(recs):
+        groups.setdefault(uf.find(i), []).append(rec)
+    result = []
+    for group in groups.values():
+        data = {}
+        for name in spec.names:
+            for rec in group:
+                if rec.data.get(name) not in (None, ""):
+                    data[name] = rec.data[name]
+                    break
+        sources = []
+        for rec in group:
+            src = rec.data.get("zrodlo")
+            if src and src not in sources:
+                sources.append(src)
+        if sources:
+            data["zrodlo"] = "; ".join(sources)
+        result.append((data, group))
+    return result

@@ -43,6 +43,9 @@ def validate_resource(resource, apply_blocking=True):
     standard = standard_for_resource(resource)
     if standard is None:
         return None
+    from mcod.aed.models import ResourceStandardValidation
+
+    previous = ResourceStandardValidation.objects.filter(resource_id=resource.pk).first()
     try:
         raw, filename, fmt = connectors.resource_bytes(resource)
         report = validation.validate_for_standard(raw, standard=standard, filename=filename, fmt=fmt)
@@ -52,6 +55,9 @@ def validate_resource(resource, apply_blocking=True):
     store_report(resource, standard, report)
     if apply_blocking and report["blocking"] and resource.status == "published":
         block_resource(resource)
+    elif apply_blocking and not report["blocking"] and previous is not None and previous.blocking \
+            and resource.status == "draft":
+        unblock_resource(resource)  # it was set to draft by this validation and now passes
     logger.info("mcod.aed: resource %s validated against %s: %s", resource.pk, standard.code, report["status"])
     return report
 
@@ -66,6 +72,18 @@ def block_resource(resource):
     instance.status = "draft"
     instance.save()
     logger.warning("mcod.aed: resource %s set to draft (blocking validation errors)", resource.pk)
+
+
+def unblock_resource(resource):
+    """Re-publish a resource that automatic validation had unpublished, once it passes."""
+    from mcod.resources.models import Resource
+
+    instance = Resource.raw.get(pk=resource.pk)
+    if instance.status != "draft":
+        return
+    instance.status = "published"
+    instance.save()
+    logger.warning("mcod.aed: resource %s re-published (now passes its standard)", resource.pk)
 
 
 def queue_dataset_validation(dataset_id):

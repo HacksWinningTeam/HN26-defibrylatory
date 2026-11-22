@@ -293,10 +293,10 @@ def device_feature(device):
     }
 
 
-def _latest_run():
+def _latest_run(code=AED_STANDARD_CODE):
     from mcod.aed.models import AedImportRun
 
-    return AedImportRun.objects.filter(status=AedImportRun.STATUS_OK).order_by("-pk").first()
+    return AedImportRun.objects.filter(status=AedImportRun.STATUS_OK, standard__code=code).order_by("-pk").first()
 
 
 class AedDevicesView:
@@ -345,15 +345,18 @@ class AedDevicesView:
 
 
 class AedSourcesView:
-    """GET /1.4/aed/sources — datasets aggregated into the common dataset, with coverage (last run)."""
+    """GET /1.4/aed/sources and /1.4/standards/{code}/sources — datasets aggregated into the common
+    dataset of a standard, with coverage (last successful run)."""
 
     def on_get(self, req, resp, **kwargs):
         from mcod.aed.models import AedDevice
 
-        run = _latest_run()
+        code = kwargs.get("code") or AED_STANDARD_CODE
+        run = _latest_run(code)
         root = _api_root(req)
         if run is None:
-            jsonapi.send(resp, req, [], count=0, aed_count=AedDevice.objects.count(), updated_at=None)
+            jsonapi.send(resp, req, [], count=0, aed_count=AedDevice.objects.filter(standard__code=code).count(),
+                         updated_at=None)
             return
         report = run.report
         data = []
@@ -479,4 +482,5 @@ ROUTES += [
     ("/standards/{code}/schema.json", StandardSchemaFileView("json")),
     ("/standards/{code}/table-schema.json", StandardSchemaFileView("table")),
     ("/standards/{code}/validate", AedValidateView()),
+    ("/standards/{code}/sources", AedSourcesView()),
 ]

@@ -1,6 +1,6 @@
 # `T18` — Generic aggregation + nursery datasets imported from dane.gov.pl
 
-- **Status:** `TODO`
+- **Status:** `VERIFIED`
 - **Layer:** `Backend (fork)`
 - **UI Design Required:** `No`
 - **Depends On:** `T17`
@@ -27,21 +27,29 @@ N/A — backend/infra only (portal admin/portal pages are existing UI).
 
 ## Acceptance Criteria
 
-- [ ] `aed_import_sources --standard zlobki-pl` mirrors ≥ 6 nursery datasets of different institutions
-- [ ] Aggregation → common nursery dataset with table preview; report per source (rows, accepted, coverage)
-- [ ] AED aggregation unchanged (6 sources → 18,776 AEDs)
+- [x] `aed_import_sources --standard zlobki-pl` mirrors 8 nursery datasets of 8 institutions (Gdynia, Krosno, Inowrocław, Zabrze, Wyry, Tychy, Wojkowice, Tarnowskie Góry) — discovery from the standard's `discovery` settings, real file format from the URL extension
+- [x] Aggregation (command or admin button) → "Żłobki i kluby dziecięce – zbiór zbiorczy" (4306) with CSV (Tabela 85 rows + Mapa), XLSX, schema XLSX, API link; report per source (rows, accepted, coverage, column mapping); `/1.4/standards/zlobki-pl/sources`
+- [x] AED aggregation unchanged (6 sources → 18,776 AEDs)
 
 ## Verification Checklist
 
 ### Automated Checks
-- [ ] `fork-config/test.sh` passes (incl. new tests for `T18`; all AED tests unchanged and green)
-- [ ] `make test` / `make lint` still pass for the repo
-- [ ] Fork healthy (`manage.py check`, migrations applied, no hook errors)
+- [x] `fork-config/test.sh` passes — 78 tests (new: format from URL, address split / derived fields / town suffix, merge by key incl. "same resource never merged", full generic run on the three nursery samples, per-standard admin dispatch); AED tests green
+- [~] `make test` / `make lint` — not affected (no repo code changed)
+- [x] Fork healthy (migration `0007_device_optional_coordinates`, no hook errors, no missing migrations)
+
+### Observed Results (2026-11-22 ~05:25)
+- Real-data findings handled by data, not code: GZM-metropolis files (Zabrze, Tychy, …) are an English export of the national nursery register (`businessPlaceName`, `operatorRegon`, `businessPlaceInstitutionType = NURSERY`) → synonyms + value aliases added to `zlobki-pl.json` (v1.0.2); their "xlsx" resources are really RDF/CSV → format from the file extension. Until the synonyms existed the 5 files were correctly blocked ("no column matches the standard"); after the standard update they passed and were **re-published automatically** (new: automatic un-blocking when a blocked resource later passes).
+- Generic engine: conversion by the standard (synonyms, coercion), derived fields (id, source, date, address parts from a full address, "Tychy, miasto" → "Tychy"), invalid rows excluded, merge by key (REGON + name, else name + address; never within one resource) — 85 records → 85 nurseries (cities do not overlap).
+- Common CSV preview: coordinate columns stay text for generic standards (many nurseries have no coordinates; the portal map parses text) → Tabela 85 rows, Mapa for the ones with coordinates.
 
 ### Manual Verification
-1. Admin → Standardy danych → "Żłobki…" → Uruchom agregację → Agregacje AED shows the nursery run
-2. Portal → "Żłobki i kluby dziecięce – zbiór zbiorczy" → CSV → Tabela
+1. Admin → *Standardy danych (agregacja)* → "Żłobki i kluby dziecięce" → **Uruchom agregację** → *Agregacje AED*: new run (zlobki-pl) "zakończona", 8 sources, 85 objects
+2. Portal https://mcod.local/pl/dataset?q=żłobki → 8 source datasets + "Żłobki i kluby dziecięce – zbiór zbiorczy" → CSV → **Tabela** (85) / **Mapa**
+3. https://api.mcod.local/1.4/standards/zlobki-pl/sources → 8 sources with coverage and column mapping
+4. Admin → *Zbiory danych* → "Tychy: Rejestr żłobków…" → *Standard danych* = Żłobki; its resource page shows the validation message; *Zasoby → Dodaj* to that dataset with `docs/demo/samples/zlobki-invalid-demo.csv` → refused
+5. AED still: Uruchom agregację on "Dane AED" → 6 sources, 18,776
 
 ### Sign-Off
-- **Verified By:** `—`
+- **Verified By:** User (marcin) on 2026-11-22 04:28
 - **Notes / Follow-Ups:** —

@@ -87,7 +87,7 @@ def ensure_organization(title, institution_type="local", **extra):
 
 
 def ensure_dataset(org, title, ext_ident, notes, standard=None, tags=("AED", "defibrylatory", "zdrowie"),
-                   license_name=None, license_text=None, update_frequency="irregular", url=None):
+                   license_name=None, license_text=None, update_frequency="irregular", url=None, category_code="HEAL"):
     """Dataset matched by ext_ident (or title); category HEAL; 'Standard danych' set (DEC-015)."""
     from mcod.aed.integration import save_dataset_standard
     from mcod.categories.models import Category
@@ -115,9 +115,9 @@ def ensure_dataset(org, title, ext_ident, notes, standard=None, tags=("AED", "de
             setattr(ds, key, value)
         ds.save()
         action = "updated"
-    heal = Category.objects.filter(code="HEAL").order_by("id").first()
-    if heal is not None:
-        ds.categories.set([heal])
+    category = Category.objects.filter(code=category_code).order_by("id").first()
+    if category is not None:
+        ds.categories.set([category])
     tag_objs = []
     for name in tags:
         tag = Tag.objects.filter(name=name, language="pl").first()
@@ -203,7 +203,7 @@ def ensure_api_resource(dataset, ext_ident, title, description, link, position=1
 GEO_COLUMNS = {"label": "nazwa", "b": "szerokosc_geograficzna", "l": "dlugosc_geograficzna"}
 
 
-def ensure_map_columns(resource_id):
+def ensure_map_columns(resource_id, geo_columns=GEO_COLUMNS, numeric_coordinates=True):
     """Common CSV: all columns `string` (the portal guesses boolean/integer from the first rows and then
     rejects empty cells), coordinates `number`, map columns label/b/l; re-index when changed (T06 logic)."""
     from mcod.core.api.search.tasks import update_with_related_task
@@ -213,7 +213,7 @@ def ensure_map_columns(resource_id):
     tds = res.tabular_data_schema
     if not tds or not tds.get("fields"):
         return False
-    wanted = {col: key for key, col in GEO_COLUMNS.items()}
+    wanted = {col: key for key, col in (geo_columns or {}).items()}
     new_tds = dict(tds)
     new_tds["fields"], new_tds["geo"] = [], {}
     for idx, f in enumerate(tds["fields"]):
@@ -222,7 +222,8 @@ def ensure_map_columns(resource_id):
         key = wanted.get(f.get("name"))
         if key:
             f["geo"] = key
-            if key in ("b", "l"):
+            if key in ("b", "l") and numeric_coordinates:
+                # numeric only when every row has coordinates (AED); the portal's map indexer parses text too
                 f["type"] = "number"
             new_tds["geo"][key] = {"col_name": f["name"], "col_index": idx}
         new_tds["fields"].append(f)

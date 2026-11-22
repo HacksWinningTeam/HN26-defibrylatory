@@ -70,3 +70,29 @@ def metadata(run, devices_count):
         "agregacja": run.started_at.strftime("%Y-%m-%dT%H:%M:%SZ") if run and run.started_at else "",
         "licencja": LICENSE,
     }
+
+
+def generic_csv_bytes(devices, names):
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\n")
+    writer.writerow(names)
+    for device in devices:
+        writer.writerow([cell(device.data.get(name)) for name in names])
+    return out.getvalue().encode("utf-8")
+
+
+def generic_xlsx_bytes(devices, names, meta):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Dane"
+    ws.append(list(names))
+    for c in ws[1]:
+        c.font = Font(bold=True)
+    for device in devices:
+        ws.append([cell(device.data.get(name)) for name in names])
+    info = wb.create_sheet("Metadane")
+    for key, value in meta.items():
+        info.append([key, str(value)])
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()

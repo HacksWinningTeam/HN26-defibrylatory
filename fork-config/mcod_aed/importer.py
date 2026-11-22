@@ -175,8 +175,16 @@ def _institution_type(name):
     return "state"
 
 
-def _notes(spec):
+def _notes(spec, standard=None):
     source = "{}/{}".format(DANE_PORTAL_URL, spec.dane_id)
+    if standard is not None and standard.code != "aed-pl":
+        body = spec.notes.strip() or "<p>{}</p>".format(spec.title)
+        if not body.startswith("<"):
+            body = "<p>{}</p>".format(body)
+        target = (standard.publish or {}).get("title", "zbioru zbiorczego")
+        return body + ("<p>Zbiór źródłowy z dane.gov.pl: <a href=\"{0}\">{0}</a>. Należy do standardu danych "
+                       "„{1}” – jego dane są walidowane ze wzorcowym zakresem i agregowane do zbioru „{2}”.</p>"
+                       ).format(source, standard.name, target)
     body = spec.notes.strip() or "<p>{}</p>".format(spec.title)
     if not body.startswith("<"):
         body = "<p>{}</p>".format(body)
@@ -187,12 +195,12 @@ def _notes(spec):
     ).format(source)
 
 
-def import_spec(spec, standard, report, force=False):
+def import_spec(spec, standard, report, force=False, category_code="HEAL", tags=("AED", "defibrylatory", "zdrowie")):
     org, _ = publishing.ensure_organization(spec.publisher, institution_type=_institution_type(spec.publisher))
     ds, ds_action = publishing.ensure_dataset(
-        org, spec.title, "dgp-{}".format(spec.dane_id), _notes(spec), standard=standard,
+        org, spec.title, "dgp-{}".format(spec.dane_id), _notes(spec, standard), standard=standard,
         license_name=spec.license_name, update_frequency=publishing.frequency_code(spec.frequency),
-        url="{}/{}".format(DANE_PORTAL_URL, spec.dane_id),
+        url="{}/{}".format(DANE_PORTAL_URL, spec.dane_id), category_code=category_code, tags=tags,
     )
     ext = "dgp-res-{}".format(spec.resource_id or spec.dane_id)
     description = "Kopia zasobu z dane.gov.pl ({}). Format oryginalny: {}.".format(
@@ -276,4 +284,102 @@ def run_import(offline=False, include_osm=True, force=False):
         except Exception as exc:
             logger.exception("mcod.aed OSM import failed")
             report.errors.append("OpenStreetMap: {}".format(exc))
+    return report
+
+
+# --- Data-defined standards (T18, DEC-019) ------------------------------------------------------
+
+KNOWN_FORMATS = ("csv", "xlsx", "xls", "json", "geojson", "xml")
+GENERIC_PRIORITY = ("csv", "xlsx", "xls", "geojson", "json", "xml")
+
+
+def effective_format(declared, url):
+    """The file extension wins over the declared format (dane.gov.pl labels some CSV/RDF files 'xlsx')."""
+    path = (url or "").split("?", 1)[0].lower()
+    ext = path.rsplit(".", 1)[-1] if "." in path.rsplit("/", 1)[-1] else ""
+    if ext in KNOWN_FORMATS or ext in ("rdf", "ttl", "pdf", "doc", "docx", "html", "htm", "zip"):
+        return ext
+    return (declared or "").lower()
+
+
+def discover_for_standard(discovery):
+    title_re = re.compile(discovery.get("title_pattern", "."), re.IGNORECASE)
+    exclude = discovery.get("exclude_pattern")
+    exclude_re = re.compile(exclude, re.IGNORECASE) if exclude else None
+    found = {}
+    for query in discovery.get("queries", []):
+        url = "{}/datasets?{}".format(DANE_API_URL, urllib.parse.urlencode({"q": query, "per_page": 100}))
+        for _ in range(3):
+            payload = _get_json(url)
+            for item in payload.get("data", []):
+                title = _strip_html(item.get("attributes", {}).get("title"))
+                if title_re.search(title) and not (exclude_re and exclude_re.search(title)):
+                    found[str(item["id"])] = title
+            url = payload.get("links", {}).get("next")
+            if not url:
+                break
+    return found
+
+
+def fetch_generic_spec(dane_id, institutions):
+    """Dataset metadata + its best tabular resource (by real file extension). None if nothing usable."""
+    payload = _get_json("{}/datasets/{}".format(DANE_API_URL, dane_id))["data"]
+    attrs = payload["attributes"]
+    inst_id = ((payload.get("relationships", {}).get("institution") or {}).get("data") or {}).get("id")
+    if inst_id and inst_id not in institutions:
+        try:
+            institutions[inst_id] = _get_json("{}/institutions/{}".format(DANE_API_URL, inst_id))["data"]["attributes"]["title"]
+        except (requests.RequestException, KeyError, ValueError):
+            institutions[inst_id] = ""
+    spec = SourceDatasetSpec(
+        dane_id=str(dane_id), title=_strip_html(attrs.get("title")).strip(), notes=attrs.get("notes") or "",
+        publisher=institutions.get(inst_id) or "Instytucja {}".format(inst_id),
+        license_name=attrs.get("license_name") or "", frequency=attrs.get("update_frequency") or "",
+    )
+    candidates = []
+    for item in _get_json("{}/datasets/{}/resources?per_page=50".format(DANE_API_URL, dane_id)).get("data", []):
+        r_attrs = item["attributes"]
+        url = r_attrs.get("file_url") or r_attrs.get("link") or ""
+        fmt = effective_format(r_attrs.get("format"), url)
+        if url and fmt in GENERIC_PRIORITY:
+            candidates.append((GENERIC_PRIORITY.index(fmt), str(item["id"]), _strip_html(r_attrs.get("title")), fmt, url))
+    if not candidates:
+        return None
+    _, spec.resource_id, spec.resource_title, spec.resource_format, spec.file_url = sorted(candidates)[0]
+    spec.content, _ = connectors.fetch_url(spec.file_url)
+    return spec
+
+
+def run_generic_import(standard, force=False):
+    """Mirror the datasets matching `standard.discovery` (max `max_datasets` with usable data)."""
+    from mcod.aed import validation
+
+    discovery = standard.discovery or {}
+    report = ImportReport(mode="online")
+    publish = standard.publish or {}
+    tags = tuple(publish.get("tags") or (standard.name,))
+    category = publish.get("category", "SOCI")
+    limit = int(discovery.get("max_datasets", 8))
+    institutions, imported = {}, 0
+    try:
+        found = discover_for_standard(discovery)
+    except (requests.RequestException, ValueError, KeyError) as exc:
+        report.errors.append("dane.gov.pl niedostępne: {}".format(exc))
+        return report
+    for dane_id, title in found.items():
+        if imported >= limit:
+            break
+        try:
+            spec = fetch_generic_spec(dane_id, institutions)
+            if spec is None:
+                report.errors.append("{} {}: brak zasobu w formacie tabelarycznym – pominięto".format(dane_id, title))
+                continue
+            validation.parse_bytes(spec.content, filename=spec.file_url.rsplit("/", 1)[-1], fmt=spec.resource_format)
+            import_spec(spec, standard, report, force=force, category_code=category, tags=tags)
+            imported += 1
+        except validation.ValidationInputError as exc:
+            report.errors.append("{} {}: plik nieczytelny ({}) – pominięto".format(dane_id, title, str(exc)[:80]))
+        except Exception as exc:  # keep importing the other sources
+            logger.exception("mcod.aed generic import of %s failed", dane_id)
+            report.errors.append("{} {}: {}".format(dane_id, title, str(exc)[:120]))
     return report

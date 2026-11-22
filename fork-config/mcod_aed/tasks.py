@@ -36,7 +36,8 @@ def on_upstream_task_done(sender=None, task_id=None, task=None, args=None, kwarg
         from mcod.aed.aggregate import NATIONAL_CSV_EXT
         from mcod.resources.models import Resource as _Resource
 
-        if _Resource.raw.filter(pk=resource_id, ext_ident=NATIONAL_CSV_EXT).exists():
+        ext = _Resource.raw.filter(pk=resource_id).values_list("ext_ident", flat=True).first() or ""
+        if ext == NATIONAL_CSV_EXT or ext.endswith("-national-csv"):
             configure_national_csv_task.apply_async(args=(resource_id,), countdown=5)
         from mcod.aed.resource_validation import standard_for_resource
         from mcod.resources.models import Resource
@@ -63,6 +64,17 @@ def aggregate_task(triggered_by="celery", standard_code="aed-pl"):
 @extended_shared_task(ignore_result=True, name="mcod.aed.tasks.configure_national_csv_task")
 def configure_national_csv_task(resource_id):
     """Common CSV processed by the portal -> make sure the Tabela/Mapa previews are configured."""
-    from mcod.aed.publishing import ensure_map_columns
+    from mcod.aed.models import DataStandard
+    from mcod.aed.publishing import GEO_COLUMNS, ensure_map_columns
+    from mcod.resources.models import Resource
 
-    return ensure_map_columns(resource_id)
+    resource = Resource.raw.get(pk=resource_id)
+    standard = DataStandard.objects.filter(target_dataset_id=resource.dataset_id).first()
+    if standard is None or standard.code == "aed-pl" or not standard.fields:
+        return ensure_map_columns(resource_id)
+    publish = standard.publish or {}
+    spec = standard.spec()
+    geo = None
+    if spec.geo_fields and publish.get("label_field") in spec.by_name:
+        geo = {"label": publish["label_field"], "b": spec.geo_fields[0], "l": spec.geo_fields[1]}
+    return ensure_map_columns(resource_id, geo, numeric_coordinates=False)  # many objects have no coordinates

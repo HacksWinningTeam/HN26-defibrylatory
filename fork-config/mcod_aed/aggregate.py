@@ -6,6 +6,7 @@ connected APIs) -> converted to the standard (AedSourceRecord, invalid rows excl
 with portal-generated CSV (table + map), XLSX, GeoJSON, schema XLSX and an API link.
 """
 import logging
+import re
 from collections import Counter
 
 from django.conf import settings
@@ -204,8 +205,11 @@ def _adopt_existing_resources(dataset, titles_by_ext):
 
 
 def supports_aggregation(standard):
-    """Standards the aggregation engine can run today: aed-pl (verified AED engine); the generic engine for
-    data-defined standards comes with T18. Test standards without a data definition use the AED engine."""
+    """aed-pl -> verified AED engine; data-defined standards -> generic engine (T18, DEC-019)."""
+    return standard.code == AED_STANDARD_CODE or not standard.fields or bool(standard.spec().fields)
+
+
+def uses_aed_engine(standard):
     return standard.code == AED_STANDARD_CODE or not standard.fields
 
 
@@ -216,7 +220,9 @@ def run_aggregation(triggered_by="command", publish=True, standard=None):
     if standard is None:
         standard = DataStandard.objects.filter(code=AED_STANDARD_CODE).first() or ensure_aed_standard()
     if not supports_aggregation(standard):
-        raise ValueError("Agregacja standardu {} nie jest jeszcze dostępna (T18).".format(standard.code))
+        raise ValueError("Agregacja standardu {} nie jest dostępna.".format(standard.code))
+    if not uses_aed_engine(standard):
+        return run_generic_aggregation(standard, triggered_by=triggered_by, publish=publish)
     run = AedImportRun.objects.create(standard=standard, triggered_by=triggered_by[:100])
     try:
         resources = source_resources(standard)
@@ -277,3 +283,172 @@ def run_aggregation(triggered_by="command", publish=True, standard=None):
         run.finished_at = timezone.now()
         run.save()
         raise
+
+
+# --- Generic engine (T18, DEC-019) ------------------------------------------------------------------
+
+
+def convert_generic_resource(resource, spec, max_invalid_ratio):
+    from mcod.aed import generic
+
+    dataset = resource.dataset
+    institution = dataset.organization.title if dataset.organization_id else ""
+    entry = {
+        "dataset_id": dataset.pk, "dataset_title": dataset.title, "institution": institution,
+        "resource_id": resource.pk, "resource_title": resource.title,
+        "kind": "api" if resource.link and not resource.is_link_internal else "file",
+        "source_type": "official", "url": portal_dataset_url(dataset), "original_url": dataset.url or "",
+    }
+    try:
+        raw, filename, fmt = connectors.resource_bytes(resource)
+        rows, fmt = validation.parse_bytes(raw, filename=filename, fmt=fmt)
+    except Exception as exc:
+        entry.update(status="error", error=str(exc)[:500], rows=0, records=0, excluded_rows=0, coverage={})
+        return [], entry
+    report = generic.validate_rows(rows, spec, max_invalid_ratio=max_invalid_ratio, fmt=fmt, collect_invalid=True)
+    invalid, records = report.pop("_invalid_rows"), report.pop("_records")
+    report.pop("_mapping", None)
+    source_key = dataset.ext_ident or "ds{}".format(dataset.pk)
+    recs = []
+    for index, (row, data) in enumerate(zip(rows, records), start=1):
+        if index in invalid:
+            continue
+        data = generic.complete_record(data, spec, index, source_key, institution or dataset.title, resource.data_date)
+        geo = spec.geo_fields
+        lat = data.get(geo[0]) if geo else None
+        lon = data.get(geo[1]) if geo else None
+        recs.append(merge.Rec(resource_id=resource.pk, kind="official", source_key="r{}".format(resource.pk),
+                              row_id=str(row.row_id or index)[:120], data=data, lat=lat, lon=lon))
+    entry.update(
+        status="ok", format=fmt, rows=len(rows), records=len(recs), excluded_rows=len(rows) - len(recs),
+        validation_status=report["status"], validation_valid=report["valid"],
+        coverage=generic.coverage([r.data for r in recs], spec),
+        column_mapping={c: i["field"] for c, i in report["column_mapping"].items() if i["field"]},
+    )
+    return recs, entry
+
+
+def run_generic_aggregation(standard, triggered_by="command", publish=True):
+    import hashlib
+
+    from mcod.aed import generic
+    from mcod.aed.models import AedDevice, AedImportRun, AedSourceRecord
+
+    spec = standard.spec()
+    run = AedImportRun.objects.create(standard=standard, triggered_by=triggered_by[:100])
+    try:
+        all_recs, entries = [], []
+        for resource in source_resources(standard):
+            recs, entry = convert_generic_resource(resource, spec, standard.max_invalid_ratio)
+            all_recs.extend(recs)
+            entries.append(entry)
+        entries_by_resource = {e["resource_id"]: e for e in entries}
+        strategy = (spec.merge or {}).get("strategy", "none")
+        if strategy == "key":
+            merged = generic.merge_by_key(all_recs, spec)
+        else:
+            merged = [(dict(r.data), [r]) for r in all_recs]
+        prefix = "PL-" + re.sub(r"[^A-Z0-9]+", "-", standard.code.upper()).strip("-")
+        the_id = generic.id_field(spec)
+        devices_data, used = [], set()
+        for data, group in merged:
+            best = group[0]
+            id_value = prefix + "-" + hashlib.sha1("{}:{}".format(best.source_key, best.row_id).encode()).hexdigest()[:10].upper()
+            while id_value in used:
+                id_value += "X"
+            used.add(id_value)
+            if the_id:
+                data[the_id] = id_value
+            geo = spec.geo_fields
+            sources = []
+            for rec in group:
+                e = entries_by_resource[rec.resource_id]
+                if all(s["dataset_id"] != e["dataset_id"] for s in sources):
+                    sources.append({"nazwa": e["institution"] or e["dataset_title"], "typ": "dane_gov_pl",
+                                    "url": e["url"], "dataset_id": e["dataset_id"]})
+            devices_data.append((id_value, data, group, sources,
+                                 data.get(geo[0]) if geo else None, data.get(geo[1]) if geo else None))
+        with transaction.atomic():
+            AedSourceRecord.objects.filter(device__standard=standard).delete()
+            AedSourceRecord.objects.filter(resource_id__in=[e["resource_id"] for e in entries]).delete()
+            AedDevice.objects.filter(standard=standard).delete()
+            devices = AedDevice.objects.bulk_create([
+                AedDevice(standard=standard, id_aed=id_value, data=data, lat=lat, lon=lon,
+                          sources_count=len(group), sources=sources)
+                for id_value, data, group, sources, lat, lon in devices_data
+            ], batch_size=2000)
+            AedSourceRecord.objects.bulk_create([
+                AedSourceRecord(resource_id=rec.resource_id, dataset_id=entries_by_resource[rec.resource_id]["dataset_id"],
+                                row_id=rec.row_id, data=rec.data, lat=rec.lat, lon=rec.lon, valid=True, device=device)
+                for device, (_, _, group, _, _, _) in zip(devices, devices_data) for rec in group
+            ], batch_size=2000)
+        devices = list(AedDevice.objects.filter(standard=standard).order_by("id_aed"))
+        report = {
+            "standard": standard.as_api_dict(), "sources": entries, "records": len(all_recs),
+            "records_included": len(all_recs), "devices": len(devices),
+            "multi_source_devices": sum(1 for d in devices if d.sources_count > 1),
+        }
+        if publish:
+            dataset, actions = publish_generic(standard, spec, devices, run)
+            report["national_dataset"] = {"id": dataset.pk, "title": dataset.title, "url": portal_dataset_url(dataset),
+                                          "resources": actions}
+        run.status = AedImportRun.STATUS_OK
+        run.sources_count, run.records_count, run.devices_count = len(entries), len(all_recs), len(devices)
+        run.report = report
+        run.finished_at = timezone.now()
+        run.save()
+        logger.info("mcod.aed: aggregation %s (%s) finished: %s sources, %s records, %s objects",
+                    run.pk, standard.code, len(entries), len(all_recs), len(devices))
+        return run
+    except Exception as exc:
+        logger.exception("mcod.aed: generic aggregation failed")
+        run.status = AedImportRun.STATUS_ERROR
+        run.report = {"error": str(exc)[:2000]}
+        run.finished_at = timezone.now()
+        run.save()
+        raise
+
+
+def publish_generic(standard, spec, devices, run):
+    publish = spec.publish or {}
+    title = publish.get("title") or "{} – zbiór zbiorczy".format(standard.name)
+    ext = "{}-national".format(standard.code)[:36]
+    org, _ = publishing.ensure_organization(NATIONAL_ORG, institution_type="other", website=settings.BASE_URL + "/")
+    notes = "<p>{}</p><p>Standard danych: <strong>{}</strong> (<code>{}</code>, v{}). Każdy zasób źródłowy jest " \
+            "automatycznie walidowany ze standardem; zasoby zablokowane i błędne wiersze są pomijane, rekordy " \
+            "opisujące ten sam obiekt są scalane ({}). API: <code>/1.4/standards/{}/sources</code>, " \
+            "<code>/1.4/standards/{}/schema</code>, <code>/1.4/standards/{}/validate</code>.</p>".format(
+                publish.get("description", ""), standard.name, standard.code, standard.version,
+                (spec.merge or {}).get("note", spec.merge.get("strategy")), standard.code, standard.code, standard.code)
+    dataset, _ = publishing.ensure_dataset(
+        org, title, ext, notes, standard=None, tags=tuple(publish.get("tags") or (standard.name,)),
+        license_name="CC BY 4.0", update_frequency="daily", url=settings.API_URL + "/1.4/standards/{}/sources".format(standard.code),
+        category_code=publish.get("category", "SOCI"),
+    )
+    if standard.target_dataset_id != dataset.pk:
+        standard.target_dataset = dataset
+        standard.save(update_fields=["target_dataset", "modified"])
+    meta = {"tytul": title, "standard": "{} v{}".format(standard.code, standard.version), "liczba_rekordow": len(devices),
+            "agregacja": run.started_at.strftime("%Y-%m-%dT%H:%M:%SZ") if run.started_at else ""}
+    slug = re.sub(r"[^a-z0-9]+", "-", standard.code.lower())
+    files = [
+        ("{}-national-csv".format(standard.code), "{} (CSV)".format(title), "{}.csv".format(slug),
+         exports.generic_csv_bytes(devices, spec.names), "csv",
+         "Pełny zbiór w formacie CSV (UTF-8), kolumny zgodne ze standardem „{}”.".format(standard.name)),
+        ("{}-national-xlsx".format(standard.code), "{} (XLSX)".format(title), "{}.xlsx".format(slug),
+         exports.generic_xlsx_bytes(devices, spec.names, meta), "xlsx", "Pełny zbiór w formacie XLSX z arkuszem metadanych."),
+        ("{}-standard-xlsx".format(standard.code), "{} (schemat, XLSX)".format(standard.name), "{}-schemat.xlsx".format(slug),
+         spec.xlsx_bytes(), "xlsx", "Specyfikacja standardu: pola, typy, wymagalność, dozwolone wartości, akceptowane nazwy kolumn."),
+    ]
+    actions = {}
+    for position, (ext_r, rtitle, filename, content, fmt, description) in enumerate(files, start=1):
+        res, action = publishing.ensure_file_resource(dataset, ext_r[:36], rtitle, description, filename, content,
+                                                      fmt=fmt, position=position)
+        actions[ext_r] = {"resource_id": res.pk, "action": action}
+    res, action = publishing.ensure_api_resource(
+        dataset, "{}-national-api".format(standard.code)[:36], "{} – API portalu (źródła i pokrycie)".format(title),
+        "Raport źródeł i pokrycia standardu przez API portalu: /1.4/standards/{}/sources.".format(standard.code),
+        settings.API_URL + "/1.4/standards/{}/sources".format(standard.code), position=len(files) + 1,
+    )
+    actions["{}-national-api".format(standard.code)] = {"resource_id": res.pk, "action": action}
+    return dataset, actions

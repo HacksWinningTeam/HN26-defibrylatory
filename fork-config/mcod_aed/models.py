@@ -170,8 +170,8 @@ class AedDevice(models.Model):
     standard = models.ForeignKey(DataStandard, on_delete=models.CASCADE, related_name="devices")
     id_aed = models.CharField(max_length=64, unique=True)
     data = JSONField(default=dict)
-    lat = models.FloatField()
-    lon = models.FloatField()
+    lat = models.FloatField(null=True, blank=True)  # optional for standards without coordinates (DEC-019)
+    lon = models.FloatField(null=True, blank=True)
     sources_count = models.PositiveSmallIntegerField(default=1)
     sources = JSONField(default=list, blank=True)  # [{nazwa, typ, url, dataset_id}]
 

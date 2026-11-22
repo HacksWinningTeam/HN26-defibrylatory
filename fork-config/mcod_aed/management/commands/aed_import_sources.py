@@ -9,11 +9,17 @@ class Command(BaseCommand):
         parser.add_argument("--offline", action="store_true", help="use the committed snapshot instead of dane.gov.pl")
         parser.add_argument("--no-osm", action="store_true", help="skip the OpenStreetMap connected API dataset")
         parser.add_argument("--force", action="store_true", help="re-upload files even if unchanged")
+        parser.add_argument("--standard", default="aed-pl", help="data standard code (default aed-pl)")
 
     def handle(self, *args, **options):
-        from mcod.aed.importer import run_import
+        from mcod.aed.importer import run_generic_import, run_import
+        from mcod.aed.models import DataStandard
 
-        report = run_import(offline=options["offline"], include_osm=not options["no_osm"], force=options["force"])
+        if options["standard"] == "aed-pl":
+            report = run_import(offline=options["offline"], include_osm=not options["no_osm"], force=options["force"])
+        else:
+            standard = DataStandard.objects.get(code=options["standard"])
+            report = run_generic_import(standard, force=options["force"])
         self.stdout.write("Tryb: {}".format(report.mode))
         self.stdout.write("{:<45} {:>6}  {:<55} {:>7}  {:<10} {}".format(
             "Instytucja", "zbiór", "tytuł", "zasób", "rodzaj", "akcja"))
@@ -22,4 +28,4 @@ class Command(BaseCommand):
                 org[:45], ds_id, ds_title[:55], res_id, kind, action))
         for error in report.errors:
             self.stdout.write(self.style.WARNING("! " + error))
-        self.stdout.write(self.style.SUCCESS("Gotowe: {} zbiorów, {} zasobów (standard aed-pl).".format(len({r[1] for r in report.rows}), len(report.rows))))
+        self.stdout.write(self.style.SUCCESS("Gotowe: {} zbiorów, {} zasobów (standard {}).".format(len({r[1] for r in report.rows}), len(report.rows), options["standard"])))
