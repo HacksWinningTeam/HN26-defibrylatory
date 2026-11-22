@@ -110,7 +110,7 @@ def patch_dataset_admin():
             label="Standard danych",
             empty_label="— brak (zbiór samodzielny) —",
             help_text=(
-                "Zbiór jest częścią większego zbioru zbiorczego, np. „Dane AED”. Dane jego zasobów "
+                "Zbiór jest częścią większego zbioru zbiorczego, np. „Defibrylatory AED” lub „Żłobki”. Dane jego zasobów "
                 "są automatycznie sprawdzane ze strukturą standardu i agregowane."
             ),
         )

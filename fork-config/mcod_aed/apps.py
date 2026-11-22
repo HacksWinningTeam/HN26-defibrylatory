@@ -10,7 +10,7 @@ from django.apps import AppConfig
 class AedConfig(AppConfig):
     name = "mcod.aed"
     label = "aed"
-    verbose_name = "Standardy danych (AED)"
+    verbose_name = "Standardy danych"
 
     def ready(self):
         from mcod.aed import integration

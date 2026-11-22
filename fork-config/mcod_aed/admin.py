@@ -186,8 +186,12 @@ class AedDeviceAdmin(admin.ModelAdmin):
     def name(self, obj):
         return obj.data.get("nazwa")
 
+    name.short_description = "nazwa"
+
     def town(self, obj):
         return obj.data.get("miejscowosc")
+
+    town.short_description = "miejscowość"
 
     def has_add_permission(self, request):
         return False
@@ -203,6 +207,8 @@ class AedSourceRecordAdmin(admin.ModelAdmin):
 
     def name(self, obj):
         return obj.data.get("nazwa")
+
+    name.short_description = "nazwa"
 
     def has_add_permission(self, request):
         return False
