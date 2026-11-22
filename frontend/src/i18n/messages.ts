@@ -254,6 +254,8 @@ export const polish = {
     "Licencja: ODbL 1.0 (zawiera dane OpenStreetMap)",
   "Source statistics are unavailable right now.":
     "Statystyki źródeł są chwilowo niedostępne.",
+  "Data validation API":
+    "API walidacji danych",
   "Close":
     "Zamknij",
   "Downloads and API":

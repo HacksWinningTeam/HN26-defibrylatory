@@ -11,9 +11,12 @@ const linkClass =
 export function DataInfo({
   report,
   forkUrl,
+  portalApiUrl = null,
 }: {
   report: SourcesReport | null;
   forkUrl: string | null;
+  /** Public dane.gov.pl fork API (T15); null = links to our old backend. */
+  portalApiUrl?: string | null;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -21,6 +24,30 @@ export function DataInfo({
   const updated = report?.updated_at
     ? new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "Europe/Warsaw" }).format(new Date(report.updated_at))
     : "—";
+
+  const schema = t("Standard AED schema");
+  const download = t("Download the dataset");
+  const links: { href: string; label: string; external: boolean }[] = portalApiUrl
+    ? [
+        { href: `${portalApiUrl}/1.4/aed/schema.xlsx`, label: `${schema} (XLSX)`, external: true },
+        { href: `${portalApiUrl}/1.4/aed/schema.csv`, label: `${schema} (CSV)`, external: true },
+        { href: `${portalApiUrl}/1.4/aed/schema.json`, label: "JSON Schema", external: true },
+        ...(forkUrl ? [{ href: forkUrl, label: t("Dataset on dane.gov.pl (fork)"), external: true }] : []),
+        { href: `${portalApiUrl}/1.4/aed/devices`, label: `${download} (GeoJSON, API)`, external: true },
+        { href: `${portalApiUrl}/1.4/aed/sources`, label: t("dane.gov.pl-compatible API"), external: true },
+        { href: `${portalApiUrl}/1.4/aed/validate`, label: t("Data validation API"), external: true },
+      ]
+    : [
+        { href: "/api/schema-standard/aed-schema.xlsx", label: `${schema} (XLSX)`, external: false },
+        { href: "/api/schema-standard/aed-template.csv", label: `${schema} (CSV)`, external: false },
+        { href: "/api/schema-standard/aed-schema.json", label: "JSON Schema", external: false },
+        { href: "/api/exports/aed.csv", label: `${download} (CSV)`, external: false },
+        { href: "/api/exports/aed.geojson", label: `${download} (GeoJSON)`, external: false },
+        { href: "/api/exports/aed.xlsx", label: `${download} (XLSX)`, external: false },
+        { href: "/api/1.4/datasets/1", label: t("dane.gov.pl-compatible API"), external: false },
+        { href: "/api/docs/", label: t("API documentation"), external: false },
+        ...(forkUrl ? [{ href: forkUrl, label: t("Dataset on dane.gov.pl (fork)"), external: true }] : []),
+      ];
 
   return (
     <section
@@ -70,53 +97,19 @@ export function DataInfo({
       <div className="flex flex-col gap-2">
         <h3 className="text-lg font-bold">{t("Downloads and API")}</h3>
         <ul className="flex flex-wrap gap-2" role="list">
-          <li>
-            <a href="/api/schema-standard/aed-schema.xlsx" className={linkClass}>
-              {t("Standard AED schema")} (XLSX)
-            </a>
-          </li>
-          <li>
-            <a href="/api/schema-standard/aed-schema.csv" className={linkClass}>
-              {t("Standard AED schema")} (CSV)
-            </a>
-          </li>
-          <li>
-            <a href="/api/schema-standard/aed-schema.json" className={linkClass}>
-              JSON Schema
-            </a>
-          </li>
-          <li>
-            <a href="/api/exports/aed.csv" className={linkClass}>
-              {t("Download the dataset")} (CSV)
-            </a>
-          </li>
-          <li>
-            <a href="/api/exports/aed.geojson" className={linkClass}>
-              {t("Download the dataset")} (GeoJSON)
-            </a>
-          </li>
-          <li>
-            <a href="/api/exports/aed.xlsx" className={linkClass}>
-              {t("Download the dataset")} (XLSX)
-            </a>
-          </li>
-          <li>
-            <a href="/api/1.4/datasets/1" className={linkClass}>
-              {t("dane.gov.pl-compatible API")}
-            </a>
-          </li>
-          <li>
-            <a href="/api/docs/" className={linkClass}>
-              {t("API documentation")}
-            </a>
-          </li>
-          {forkUrl && (
-            <li>
-              <ExternalLink href={forkUrl} className={linkClass}>
-                {t("Dataset on dane.gov.pl (fork)")}
-              </ExternalLink>
+          {links.map((link) => (
+            <li key={link.href}>
+              {link.external ? (
+                <ExternalLink href={link.href} className={linkClass}>
+                  {link.label}
+                </ExternalLink>
+              ) : (
+                <a href={link.href} className={linkClass}>
+                  {link.label}
+                </a>
+              )}
             </li>
-          )}
+          ))}
         </ul>
       </div>
 

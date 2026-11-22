@@ -73,14 +73,21 @@ services:
       API_INTERNAL_URL: http://backend:8000
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
       DANEGOV_FORK_URL: ${DANEGOV_FORK_URL:-}
+      # T15 / DEC-014: map data from the local dane.gov.pl fork API (server-side only; empty = old backend)
+      DANEGOV_API_URL: ${DANEGOV_API_URL:-https://api.mcod.local}
+      # trust the fork's self-signed dev certificate (certificate only, no key) instead of disabling TLS checks
+      NODE_EXTRA_CA_CERTS: /etc/fork-ca/mcod.local.pem
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
       NEXT_TELEMETRY_DISABLED: "1"
+    extra_hosts:
+      - "api.mcod.local:host-gateway"
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+      - ./dane-gov-pl/backend_latest/docker/nginx/certs/mcod.local.pem:/etc/fork-ca/mcod.local.pem:ro
     depends_on:
       backend:
         condition: service_healthy

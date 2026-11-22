@@ -72,6 +72,8 @@ services:
       API_INTERNAL_URL: http://backend:8000
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
       DANEGOV_FORK_URL: ${DANEGOV_FORK_URL:-}
+      # T15: dane.gov.pl fork API for the map; empty on Hetzner (no fork there, T10 cancelled) = old backend data
+      DANEGOV_API_URL: ${DANEGOV_API_URL:-}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

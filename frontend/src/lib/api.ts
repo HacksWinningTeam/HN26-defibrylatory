@@ -93,9 +93,9 @@ export interface SourcesReport {
   sources: SourceSummary[];
 }
 
-/** National AED set as GeoJSON (DEC-008); loaded once in the browser via the same-origin proxy. */
+/** National AED set as GeoJSON (DEC-008); browser -> same-origin route -> dane.gov.pl fork API (T15). */
 export async function fetchAeds(signal?: AbortSignal): Promise<AedCollection> {
-  const response = await fetch(`${getApiBaseUrl()}/api/aed/`, {
+  const response = await fetch("/portal-api/aed/devices", {
     headers: { Accept: "application/geo+json, application/json" },
     signal,
   });

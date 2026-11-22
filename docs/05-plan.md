@@ -44,7 +44,7 @@ Order: T11 → T14 (validation needs only the ported schema/parsers — the expl
 | `T14` | Validation API `POST /1.4/aed/validate` + automatic validation on upload that blocks publishing (DEC-015) | Backend (fork) | No | `T11` | 2 h | `VERIFIED` | [T14](tasks/T14-validation-api.md) |
 | `T12` | Mirror AED source datasets from dane.gov.pl into the fork (files + connected APIs) | Backend (fork) | No | `T11` | 1.5 h | `VERIFIED` | [T12](tasks/T12-import-aed-sources-into-fork.md) |
 | `T13` | In-portal aggregation → converted sources + common dataset published natively; `/1.4/aed/sources`, `/1.4/aed/devices` | Backend (fork) | No | `T12` | 2.5 h | `VERIFIED` | [T13](tasks/T13-in-portal-aggregation.md) |
-| `T15` | Next.js map reads data from the fork API | Frontend | No | `T13` | 1 h | `TODO` | [T15](tasks/T15-map-reads-fork-api.md) |
+| `T15` | Next.js map reads data from the fork API | Frontend | No | `T13` | 1 h | `VERIFIED` | [T15](tasks/T15-map-reads-fork-api.md) |
 
 ## Milestone 4 — Demo Polish & End-to-End Readiness
 
