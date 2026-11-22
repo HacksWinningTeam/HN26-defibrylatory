@@ -1,6 +1,6 @@
 "use client";
 
-// Client-only (loaded with next/dynamic { ssr: false } from AedFinder).
+// Client-only (loaded with next/dynamic { ssr: false } from MapFirstView).
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 
@@ -156,9 +156,18 @@ export interface AedMapProps {
   location: UserLocation;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** Extra space kept free on the top-left when fitting the nearest AED (e.g. under a floating card). */
+  fitPaddingTopLeft?: [number, number];
 }
 
-export default function AedMap({ features, nearest, location, selectedId, onSelect }: AedMapProps) {
+export default function AedMap({
+  features,
+  nearest,
+  location,
+  selectedId,
+  onSelect,
+  fitPaddingTopLeft,
+}: AedMapProps) {
   const t = useTranslations();
   const locale = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,10 +176,12 @@ export default function AedMap({ features, nearest, location, selectedId, onSele
   const onSelectRef = useRef(onSelect);
   const selectedRef = useRef(selectedId);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const fitPaddingRef = useRef(fitPaddingTopLeft);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
     selectedRef.current = selectedId;
+    fitPaddingRef.current = fitPaddingTopLeft;
   });
 
   // 1. Map, tiles, zoom control, "you are here" marker.
@@ -190,7 +201,9 @@ export default function AedMap({ features, nearest, location, selectedId, onSele
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
     }).addTo(map);
-    L.control.zoom({ zoomInTitle: t("Zoom in"), zoomOutTitle: t("Zoom out") }).addTo(map);
+    L.control
+      .zoom({ position: "topright", zoomInTitle: t("Zoom in"), zoomOutTitle: t("Zoom out") })
+      .addTo(map);
     L.marker([location.lat, location.lon], {
       interactive: false,
       keyboard: false,
@@ -291,7 +304,12 @@ export default function AedMap({ features, nearest, location, selectedId, onSele
           const { lat, lon } = featureLatLon(item.feature);
           bounds.extend([lat, lon]);
         });
-        map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17, animate: false });
+        map.fitBounds(bounds, {
+          paddingTopLeft: fitPaddingRef.current ?? [48, 48],
+          paddingBottomRight: [48, 48],
+          maxZoom: 17,
+          animate: false,
+        });
       }
     });
 

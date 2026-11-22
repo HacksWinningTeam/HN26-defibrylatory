@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { AppearanceSelector } from "@/appearance/appearance-selector";
 import { AccessibilityMenu } from "@/components/accessibility/AccessibilityMenu";
 import { LanguageSelector } from "@/i18n/language-selector";
 import { useTranslations } from "@/i18n/provider";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const t = useTranslations();
+  const mapFirst = usePathname() === "/"; // T21: the map page is full-bleed, without footer
 
   return (
     <>
@@ -20,7 +21,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div
+          className={`mx-auto flex w-full flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 ${
+            mapFirst ? "" : "max-w-7xl"
+          }`}
+        >
           <Link href="/" className="flex min-h-11 items-center gap-3 text-[var(--color-text)] no-underline">
             <span aria-hidden="true" className="aed-pin h-10 w-10 shrink-0">
               <svg viewBox="0 0 24 24" focusable="false">
@@ -36,16 +41,30 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <div className="flex flex-wrap items-center gap-3">
+            <a
+              href="tel:112"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border-2 border-[var(--color-error-badge)] bg-[var(--color-error-badge)] px-4 font-extrabold text-[var(--color-error-on-badge)] no-underline hover:opacity-90"
+            >
+              <span aria-hidden="true">📞</span> {t("Call 112")}
+            </a>
             <LanguageSelector />
-            <AppearanceSelector />
           </div>
         </div>
       </header>
 
-      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={
+          mapFirst
+            ? "flex w-full flex-1 flex-col"
+            : "mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6"
+        }
+      >
         {children}
       </main>
 
+      {!mapFirst && (
       <footer className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 pr-20 text-sm text-[var(--color-text-muted)] sm:px-6 sm:pr-20">
           <span>
@@ -59,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </div>
       </footer>
+      )}
 
       <AccessibilityMenu />
     </>

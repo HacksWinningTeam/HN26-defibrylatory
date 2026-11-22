@@ -23,11 +23,14 @@ export function NearestCard({
   from,
   selected,
   onShowOnMap,
+  compact = false,
 }: {
   aed: NearbyAed;
   from: LatLon;
   selected: boolean;
   onShowOnMap: (id: string) => void;
+  /** Map-first page (T21): no frame, no "show on map" / details (the map popup has them). */
+  compact?: boolean;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -39,11 +42,15 @@ export function NearestCard({
   return (
     <article
       aria-labelledby="nearest-aed-title"
-      className={`flex flex-col gap-4 rounded-xl bg-[var(--color-surface)] p-5 shadow-sm ${
-        selected
-          ? "border-4 border-[var(--color-accent)]"
-          : "border-2 border-[var(--color-border)]"
-      }`}
+      className={
+        compact
+          ? "flex flex-col gap-4"
+          : `flex flex-col gap-4 rounded-xl bg-[var(--color-surface)] p-5 shadow-sm ${
+              selected
+                ? "border-4 border-[var(--color-accent)]"
+                : "border-2 border-[var(--color-border)]"
+            }`
+      }
     >
       <div>
         <p className="text-5xl leading-none font-extrabold tracking-tight">
@@ -83,6 +90,7 @@ export function NearestCard({
         <span aria-hidden="true">➜</span> {t("Navigate to AED")}
       </ExternalLink>
 
+      {!compact && (
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -95,7 +103,9 @@ export function NearestCard({
           {selected && <span className="ml-2 text-sm">({t("Selected")})</span>}
         </button>
       </div>
+      )}
 
+      {!compact && (
       <details className="group rounded-lg border border-[var(--color-border-subtle)] p-3">
         <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-[var(--color-accent-text)]">
           {t("More information")}
@@ -104,6 +114,7 @@ export function NearestCard({
           <AedDetails props={props} />
         </div>
       </details>
+      )}
     </article>
   );
 }
