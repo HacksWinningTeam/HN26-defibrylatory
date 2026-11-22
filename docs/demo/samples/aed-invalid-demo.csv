@@ -1,0 +1,4 @@
+id_aed,nazwa,szerokosc_geograficzna,dlugosc_geograficzna,opis_lokalizacji,w_budynku,pietro,wojewodztwo,powiat,gmina,miejscowosc,kod_terc,kod_simc,cecha_ulicy,nazwa_ulicy,nr_budynku,nr_lokalu,kod_pocztowy,dostep,godziny_dostepnosci,zabezpieczenie,instrukcja_dojscia,status,data_ostatniego_uzycia,producent,model,numer_seryjny,data_instalacji,elektrody_pediatryczne,data_ostatniego_przegladu,data_nastepnego_przegladu,data_waznosci_elektrod,data_waznosci_elektrod_pediatrycznych,data_waznosci_baterii,dysponent,telefon_kontaktowy,email_kontaktowy,data_aktualizacji,zweryfikowany,zrodlo,zrodlo_url,uwagi
+ZLY-001,AED bez współrzędnych,,,,,,,,,Gdzieś,,,,,,,,publiczny,,,,,,,,,,,,,,,,,,,2026-11-22,,demo,,
+ZLY-002,AED w Niemczech,48.137,11.575,,,,,,,München,,,,,,,,dla_wszystkich,,,,,,,,,,,,,,,,,,,22.11.2026,,demo,,
+ZLY-003,,52.2,21.0,,,,,,,Warszawa,,,,,,,,publiczny,,,,,,,,,,,,,,,,,,,2026-11-22,,demo,,

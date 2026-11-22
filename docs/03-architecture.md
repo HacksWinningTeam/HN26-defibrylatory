@@ -24,7 +24,7 @@
  Next.js map (T07 UI) -> same-origin route -> fork API (T15, DANEGOV_API_URL)
 ```
 
-- **Code location & install:** `fork-config/mcod_aed/` (tracked) → `dane-gov-pl/backend_latest/mcod/aed/` via `fork-config/setup.sh` / `install_aed.sh` (copy + idempotent patch of `mcod/routes.py`; `INSTALLED_APPS += ["mcod.aed"]` in `fork-config/local.py`; migrations run in `mcod-admin`). Nothing else in `dane-gov-pl/` is edited by hand.
+- **Code location & install (as built in T11):** `fork-config/mcod_aed/` (tracked) is **bind-mounted** at `/usr/src/mcod_backend/mcod/aed` in all app containers (`fork-config/compose.override.yml`); `INSTALLED_APPS += ["mcod.aed.apps.AedConfig"]` in `fork-config/local.py`; migrations via the normal `migrate` in `setup.sh`. **No upstream file is edited**: `AedConfig.ready()` → `integration.py` appends routes to `mcod.routes.routes` (+ `/{api_version}` variants) in the api container, adds `data_standard` to `DatasetApiAttrs`, and wraps `DatasetAdminMixin.form/get_fieldsets/save_model` in the admin container. Tests: `fork-config/test.sh` (unittest, no pytest in the image).
 - **Runtime:** Python 3.8, Django 2.2, Falcon 4 (`mcod-app:local` image); no new pip dependencies unless already in the image.
 - **Models:** `AedImportRun(started_at, finished_at, status, report JSON)`, `AedSourceRecord(resource FK, row_no, raw JSON, data JSON keyed by schema fields, lat, lon, valid, quality_flags JSON, device FK)`, `AedDevice(id_aed unique, data JSON, lat, lon, sources_count)`.
 - **API (dane.gov.pl 1.4 JSON:API envelope `data/links/meta`, `jsonapi`):**

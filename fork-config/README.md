@@ -15,6 +15,8 @@ code; **everything we change lives here** and is copied in by `setup.sh`.
 | `fork-compose.sh` | `docker compose -f docker-compose.local.yml -f compose.override.yml "$@"` run in `backend_latest/` | — |
 | `setup.sh` / `start.sh` / `stop.sh` | idempotent setup; start; stop (never `-v`) | — |
 | `publish_aed.py` / `publish.sh` | publish/refresh the national AED dataset in the fork (T06) | stdin of `manage.py shell` |
+| `mcod_aed/` | the `mcod.aed` Django app (DEC-014) | bind-mounted at `mcod/aed` |
+| `test.sh` | run the `mcod.aed` tests in `mcod-admin` | — |
 
 `setup.sh` also creates empty dirs (bind-mount targets) `backend_latest/test-data`,
 `frontend_latest/node_modules`, `frontend_latest/.angular` (the real `node_modules` lives in
@@ -45,6 +47,32 @@ fork-config/fork-compose.sh run --rm --no-deps mcod-local-run python manage.py s
 
 **Always name services** with `fork-compose.sh up/build` (the override disables discourse
 etc. via a profile, but be explicit anyway).
+
+## `mcod.aed` plugin — data standards, validation, aggregation (DEC-014 / DEC-015)
+
+A regular dane.gov.pl Django app living in **`fork-config/mcod_aed/`** (tracked). It is
+**bind-mounted** at `backend_latest/mcod/aed` into every app container (`compose.override.yml`) and
+enabled in `local.py` (`INSTALLED_APPS += ["mcod.aed.apps.AedConfig"]`). No upstream file is edited:
+all hooks are applied from `AedConfig.ready()` (`integration.py`), scoped by the container's `COMPONENT`:
+
+| Hook | Container | Effect |
+|---|---|---|
+| append `mcod.aed.views.ROUTES` (+ `/{api_version}` variants) to `mcod.routes.routes` | api | `/1.4/aed/schema`, `/1.4/aed/schema.xlsx`, `.csv` (template), `.json` (JSON Schema), `/1.4/aed/table-schema.json` |
+| `data_standard` field on `DatasetApiAttrs` | api | `{code,name,version}` or `null` in `/1.4/datasets` and `/1.4/datasets/{id}` |
+| wrap `DatasetAdminMixin.form` / `get_fieldsets` / `save_model` | admin | "Standard danych" select on the dataset *General* tab → `DatasetStandard` |
+
+Models: `DataStandard` (seeded `aed-pl` v1.0.0, `max_invalid_ratio` 0.2, admin *Standardy danych*),
+`DatasetStandard`, `ResourceStandardValidation` (filled from T14). Code changes reload automatically in
+api/admin; restart celery (`docker restart mcod-celery`). New migrations:
+`fork-compose.sh run --rm --no-deps mcod-local-run python manage.py makemigrations aed` (files are created as root —
+`docker run --rm -v $PWD/fork-config/mcod_aed:/x --entrypoint chown mcod-app:local -R 1000:1000 /x`), then
+`docker exec mcod-admin python manage.py migrate aed`.
+
+Tests (no pytest in the mcod image → `unittest`, against the live fork DB, writes rolled back):
+
+```bash
+fork-config/test.sh -v
+```
 
 ## Publish the national AED dataset (T06)
 

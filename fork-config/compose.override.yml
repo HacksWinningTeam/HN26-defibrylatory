@@ -67,6 +67,9 @@ services:
 
   mcod-local-admin:
     image: mcod-app:local
+    volumes:
+      # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
+      - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -80,6 +83,9 @@ services:
 
   mcod-local-api:
     image: mcod-app:local
+    volumes:
+      # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
+      - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -93,6 +99,9 @@ services:
 
   mcod-local-cms:
     image: mcod-app:local
+    volumes:
+      # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
+      - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -106,6 +115,9 @@ services:
 
   mcod-local-celery:
     image: mcod-app:local
+    volumes:
+      # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
+      - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -120,6 +132,9 @@ services:
   mcod-local-run:
     # upstream builds docker/tests/Dockerfile; the plain app image is enough for manage.py
     image: mcod-app:local
+    volumes:
+      # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
+      - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
     build: !reset null
     depends_on: !override []
 

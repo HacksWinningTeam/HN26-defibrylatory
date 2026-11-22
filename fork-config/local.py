@@ -4,6 +4,9 @@
 from mcod.settings.base import *  # noqa: F403
 
 DEBUG = True
+
+# DEC-014: AED data standard / validation / aggregation plugin (fork-config/mcod_aed)
+INSTALLED_APPS = [*INSTALLED_APPS, "mcod.aed.apps.AedConfig"]  # noqa: F405
 ALLOWED_HOSTS = ["*"]
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG  # noqa: F405

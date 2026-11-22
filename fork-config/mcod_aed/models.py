@@ -1,0 +1,99 @@
+"""Data standards and the "Standard danych" link of datasets (DEC-015).
+
+Models for aggregation (`AedImportRun`, `AedSourceRecord`, `AedDevice`) are added in T13.
+"""
+from django.contrib.postgres.fields import JSONField
+from django.db import models
+
+
+class DataStandard(models.Model):
+    """A structured data standard a dataset can belong to (e.g. `aed-pl`)."""
+
+    code = models.SlugField("kod", max_length=50, unique=True)
+    name = models.CharField("nazwa", max_length=200)
+    version = models.CharField("wersja", max_length=20)
+    description = models.TextField("opis", blank=True)
+    json_schema = JSONField("JSON Schema", default=dict, blank=True)
+    target_dataset = models.ForeignKey(
+        "datasets.Dataset",
+        verbose_name="zbiór zbiorczy",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        help_text="Zbiór, do którego agregowane są dane wszystkich zbiorów w tym standardzie.",
+    )
+    max_invalid_ratio = models.FloatField(
+        "maks. odsetek błędnych wierszy",
+        default=0.2,
+        help_text="Powyżej tego odsetka błędnych wierszy zasób jest blokowany (nie publikowany).",
+    )
+    is_active = models.BooleanField("aktywny", default=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "standard danych"
+        verbose_name_plural = "standardy danych"
+        ordering = ("name",)
+
+    def __str__(self):
+        return "{} ({} v{})".format(self.name, self.code, self.version)
+
+    def as_api_dict(self):
+        return {"code": self.code, "name": self.name, "version": self.version}
+
+
+class DatasetStandard(models.Model):
+    """'Standard danych' of a dataset: the dataset is part of the standard's bigger dataset."""
+
+    dataset = models.OneToOneField(
+        "datasets.Dataset", on_delete=models.CASCADE, related_name="aed_standard_link"
+    )
+    standard = models.ForeignKey(DataStandard, on_delete=models.PROTECT, related_name="dataset_links")
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "standard danych zbioru"
+        verbose_name_plural = "standardy danych zbiorów"
+
+    def __str__(self):
+        return "{} -> {}".format(self.dataset_id, self.standard.code)
+
+
+class ResourceStandardValidation(models.Model):
+    """Latest automatic validation of a resource against its dataset's standard (filled in T14)."""
+
+    STATUS_VALID = "valid"
+    STATUS_WARNINGS = "warnings"
+    STATUS_INVALID = "invalid"
+    STATUS_ERROR = "error"
+    STATUS_CHOICES = (
+        (STATUS_VALID, "zgodny ze standardem"),
+        (STATUS_WARNINGS, "zgodny, z ostrzeżeniami"),
+        (STATUS_INVALID, "niezgodny ze standardem"),
+        (STATUS_ERROR, "nie udało się sprawdzić"),
+    )
+
+    resource = models.OneToOneField(
+        "resources.Resource", on_delete=models.CASCADE, related_name="aed_standard_validation"
+    )
+    standard = models.ForeignKey(DataStandard, on_delete=models.CASCADE, related_name="validations")
+    standard_version = models.CharField(max_length=20)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    blocking = models.BooleanField(default=False)
+    rows_total = models.PositiveIntegerField(default=0)
+    rows_invalid = models.PositiveIntegerField(default=0)
+    column_mapping = JSONField(default=dict, blank=True)
+    coverage = JSONField(default=dict, blank=True)
+    errors = JSONField(default=list, blank=True)
+    warnings = JSONField(default=list, blank=True)
+    validated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "walidacja zasobu względem standardu"
+        verbose_name_plural = "walidacje zasobów względem standardu"
+
+    def __str__(self):
+        return "{}: {}".format(self.resource_id, self.status)
