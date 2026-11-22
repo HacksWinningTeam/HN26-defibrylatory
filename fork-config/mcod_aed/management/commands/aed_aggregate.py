@@ -20,6 +20,9 @@ class Command(BaseCommand):
                 s["dataset_id"], (s["institution"] or s["dataset_title"])[:48], s["kind"],
                 s.get("validation_status", s["status"]), s.get("rows", 0), s.get("records", 0),
                 s.get("excluded_rows", 0), (s.get("coverage") or {}).get("required", "-")))
+        for s in report["sources"]:
+            if s.get("note") or s.get("error"):
+                self.stdout.write(self.style.WARNING("! {}: {}".format(s["institution"] or s["dataset_title"], s.get("note") or s.get("error"))))
         self.stdout.write(self.style.SUCCESS(
             "Agregacja {}: {} źródeł, {} rekordów ({} przyjętych) -> {} urządzeń AED ({} z kilku źródeł).".format(
                 run.pk, run.sources_count, report["records"], report["records_included"], report["devices"],

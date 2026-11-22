@@ -73,6 +73,10 @@ def convert_resource(resource, max_invalid_ratio):
     except Exception as exc:  # unreadable source: reported, run continues
         entry.update(status="error", error=str(exc)[:500], rows=0, records=0, excluded_rows=0, coverage={})
         return [], entry
+    if filename == connectors.WARSAW_SNAPSHOT_NAME:
+        entry["note"] = ("API m.st. Warszawy niedostępne z tego serwera – użyto oznaczonej kopii offline "
+                         "z 2026-11-21 (pobranej wcześniej przez to samo API z tokenem).")
+        entry["offline_copy"] = True
     report = validation.validate_rows(rows, max_invalid_ratio=max_invalid_ratio, fmt=fmt, collect_invalid=True)
     invalid = report.pop("_invalid_rows")
     ctx = normalize.SourceContext(

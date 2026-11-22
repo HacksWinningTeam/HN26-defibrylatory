@@ -132,6 +132,30 @@ Known limitations: the XLSX resources have no table preview (typed cells + trail
 fork's goodtables check) — the CSV is the previewed resource. The fork's licence field only knows CC
 licences, so the portal shows "CC BY 4.0"; the ODbL 1.0 requirement is in the conditions and description.
 
+## Hetzner deployment for the judges (T10, DEC-018)
+
+Public URLs (Let's Encrypt, no hosts edits): **https://mcod.2.29.205.102.sslip.io** (portal),
+**https://admin.mcod.2.29.205.102.sslip.io** (admin), **https://api.mcod.2.29.205.102.sslip.io/1.4/** (API).
+Server `ssh hack`, code in `/home/github/apps/danegov-fork/` (outside the CI-synced app dir; a push to `main`
+never touches it). The fork's nginx publishes 80/443 on the server.
+
+```bash
+# 1. once: ship the fork images (built locally; ~6 GB raw, zstd-compressed)
+docker save danegov-fork-mcod-db elasticsearch:6.8.23-mcod-1 mailhog/mailhog mcod-app:local nginx:1.31-mcod-1 \
+  node:22-bookworm-slim rabbitmq:4.2.5-management-alpine-mcod redis:8.4.2-trixie-mcod | zstd -T0 -3 -c \
+  | ssh hack 'zstd -d -c | docker load'
+# 2. code + config + hostnames + certificate + setup (idempotent)
+fork-config/hetzner/deploy.sh            # defaults: ssh host "hack", IP 2.29.205.102
+# 3. data
+ssh hack 'cd /home/github/apps/danegov-fork && fork-config/aed-demo.sh'
+```
+
+`hetzner/apply-hostnames.sh` rewrites `mcod.local` → `mcod.<ip>.sslip.io` in the **deployed copy only**
+(backend `.env`, nginx templates, Angular proxy/allowedHosts, compose aliases; the fixture login
+`admin@mcod.local` stays). `hetzner/certs.sh` gets a Let's Encrypt certificate with a one-off certbot
+container on port 80 (no e-mail registered), falling back to self-signed. `setup.sh` honours `FORK_SKIP_BUILD=1`
+(use the shipped images). `WARSAW_API_TOKEN` is copied from the repo `.env` into the server's `danegov-fork/.env`.
+
 ## URLs & credentials (accept the self-signed certificate once per hostname)
 
 | URL | What |

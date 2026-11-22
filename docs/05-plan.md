@@ -51,5 +51,5 @@ Order: T11 → T14 (validation needs only the ported schema/parsers — the expl
 | ID | Task | Layer | UI Design? | Depends On | Est. | Status | Spec |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `T08` | Schema & source coverage page (/schemat) — cancelled (DEC-014) | Frontend | Yes | `T04` | 1 h | `CANCELLED` | [T08](tasks/T08-schema-coverage-page.md) |
-| `T10` | Deploy dane.gov.pl fork to Hetzner — cancelled (DEC-014) | Infra | No | `T06` | 2.5 h | `CANCELLED` | [T10](tasks/T10-fork-hetzner.md) |
+| `T10` | Deploy dane.gov.pl fork + `mcod.aed` to Hetzner (port 3080, sslip.io) — revived (DEC-018) | Infra | No | `T09` | 3 h | `VERIFIED` | [T10](tasks/T10-fork-hetzner.md) |
 | `T09` | Demo readiness (in-portal flow), offline snapshot, demo script, retire `backend/` decision | Infra | No | `T13`, `T14`, `T15` | 1 h | `VERIFIED` | [T09](tasks/T09-demo-readiness.md) |

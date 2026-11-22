@@ -149,6 +149,13 @@
 - **Decision:** Keep `backend` (+ `db`) in `compose.yaml` / `compose.prod.yaml` / CI unchanged and frozen (not extended): on Hetzner `DANEGOV_API_URL` is empty, so the map keeps using the old backend `/api/aed/` (same DEC-008 contract). Locally the demo needs only the fork + `frontend` (`docker compose up -d --no-deps frontend`). Datasets with invented demo data (e.g. "Bydgoszcz (demo)") stay `draft` so they are never aggregated into the national dataset or shown on the map. Admin sidebar gets a "Standardy danych" section (django-suit `MENU` entry in `fork-config/local.py`). One-command demo preparation: `fork-config/aed-demo.sh [--offline]`.
 - **Affected Docs & Tasks:** T09, `docs/demo-script.md`, `fork-config/aed-demo.sh`, `fork-config/local.py`, `fork-config/README.md`.
 
+### `DEC-018` — T10 Revived: dane.gov.pl Fork with `mcod.aed` on Hetzner for the Judges
+- **Date:** 2026-11-22 02:48
+- **Status:** Accepted (reverses the T10 cancellation of DEC-014; supersedes the Hetzner part of DEC-017)
+- **Context / New Info:** User: the judges have to see the app. The in-portal module exists only on the local fork; Hetzner runs only the Next.js map with old-backend data. Server check: 15 GB RAM (13 GB free), 8 vCPU, 21 GB disk free, swap 4 GB, `vm.max_map_count` 262144, port 3080 free, IP 2.29.205.102. ~6 h to code freeze.
+- **Decision:** Deploy the fork + `mcod.aed` to `ssh hack` in `/home/github/apps/danegov-fork/` (outside the CI-synced dir), only nginx published on **3080**, hostnames `mcod./api./admin./cms.2.29.205.102.sslip.io` (no hosts edits for judges). Reuse the proven local stack (same compose files + `fork-config/compose.override.yml`) plus a Hetzner override for hostnames/ports/certificate; images built locally and shipped (`docker save | ssh hack docker load`); data created on the server by `init_mcod_db` + `fork-config/aed-demo.sh`. Timebox 3 h; fallback = local demo + screenshots. Our app's CI deploy and `compose.prod.yaml` stay untouched; optionally point the Hetzner map (`DANEGOV_API_URL`) at the server fork afterwards.
+- **Affected Docs & Tasks:** T10 (`TODO` again, rescoped), `docs/05-plan.md`, `fork-config/hetzner/*`, `fork-config/README.md`.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`

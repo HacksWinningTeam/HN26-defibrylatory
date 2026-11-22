@@ -28,14 +28,20 @@ pull_mirror() {  # $1 = local name, $2 = mirror path
     docker pull -q "mirror.gcr.io/$2" && docker tag "mirror.gcr.io/$2" "$1"
   fi
 }
-for img in python:3.8.20-bullseye postgres:17-trixie redis:8.4.2-trixie \
-           rabbitmq:4.2.5-management-alpine nginx:1.31.6 node:22-bookworm-slim; do
-  pull_mirror "$img" "library/$img"
-done
-pull_mirror mailhog/mailhog mailhog/mailhog:latest
+if [ "${FORK_SKIP_BUILD:-0}" != "1" ]; then
+  for img in python:3.8.20-bullseye postgres:17-trixie redis:8.4.2-trixie \
+             rabbitmq:4.2.5-management-alpine nginx:1.31.6 node:22-bookworm-slim; do
+    pull_mirror "$img" "library/$img"
+  done
+  pull_mirror mailhog/mailhog mailhog/mailhog:latest
+fi
 
 echo "==> [3/5] Building images (app image: python 3.8 + pipenv, slow on first run)"
-"$FC" build mcod-db mcod-rabbitmq mcod-redis mcod-elasticsearch mcod-nginx
+if [ "${FORK_SKIP_BUILD:-0}" = "1" ]; then
+  echo "    FORK_SKIP_BUILD=1: using pre-loaded images (Hetzner deploy ships them with docker save/load)"
+else
+  "$FC" build mcod-db mcod-rabbitmq mcod-redis mcod-elasticsearch mcod-nginx
+fi
 if ! docker image inspect mcod-app:local >/dev/null 2>&1; then
   (cd "$BE" && docker build -f docker/app/Dockerfile -t mcod-app:local .)
 fi

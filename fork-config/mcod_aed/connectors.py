@@ -10,6 +10,11 @@ TIMEOUT = 60
 WARSAW_ACTION_PREFIX = "https://dane.um.warszawa.pl/api/action/"
 WARSAW_AED_ACTION = WARSAW_ACTION_PREFIX + "get_scb_lokalizacja_defibrylatorow"
 OSM_AED_URL = "https://openaedmap.org/api/v1/countries/PL.geojson"
+# Labelled offline copy of the Warsaw API answer (fetched with a token on 2026-11-21), used only when the
+# city API is unreachable (e.g. dane.um.warszawa.pl times out from the Hetzner server).
+WARSAW_SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "snapshot",
+                               "dane_gov_pl_39512_2512040.json")
+WARSAW_SNAPSHOT_NAME = "warszawa-aed-kopia-offline-2026-11-21.json"
 
 
 class SourceLoadError(Exception):
@@ -49,10 +54,13 @@ def fetch_warsaw(url):
             "API m.st. Warszawy wymaga tokenu (WARSAW_API_TOKEN, bezpłatny: dane.um.warszawa.pl/key-api)."
         )
     try:
-        resp = requests.post(url, data=b"{}", timeout=TIMEOUT,
+        resp = requests.post(url, data=b"{}", timeout=(10, TIMEOUT),
                              headers={"Authorization": token, "Content-Type": "application/json",
                                       "User-Agent": "dane.gov.pl mcod.aed"})
     except requests.RequestException as exc:
+        if os.path.exists(WARSAW_SNAPSHOT):  # unreachable network path -> labelled offline copy
+            with open(WARSAW_SNAPSHOT, "rb") as fh:
+                return fh.read(), WARSAW_SNAPSHOT_NAME
         raise SourceLoadError("Nie udało się pobrać {}: {}".format(url, exc))
     if resp.status_code in (401, 403):
         raise SourceLoadError("API m.st. Warszawy odrzuciło token (HTTP {}).".format(resp.status_code))
