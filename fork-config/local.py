@@ -7,6 +7,22 @@ DEBUG = True
 
 # DEC-014: AED data standard / validation / aggregation plugin (fork-config/mcod_aed)
 INSTALLED_APPS = [*INSTALLED_APPS, "mcod.aed.apps.AedConfig"]  # noqa: F405
+# Sidebar entry for the plugin (django-suit menu is an explicit list in base.py), right after "Dane".
+SUIT_CONFIG["MENU"].insert(  # noqa: F405
+    1,
+    {
+        "label": "Standardy danych",
+        "icon": "icon-file",
+        "models": [
+            {"model": "aed.datastandard", "label": "Standardy danych (agregacja)"},
+            {"model": "aed.aedimportrun", "label": "Agregacje AED"},
+            {"model": "aed.aeddevice", "label": "Zbiór zbiorczy AED – urządzenia"},
+            {"model": "aed.resourcestandardvalidation", "label": "Walidacje zasobów"},
+            {"model": "aed.datasetstandard", "label": "Zbiory w standardach"},
+            {"model": "aed.aedsourcerecord", "label": "Rekordy źródłowe"},
+        ],
+    },
+)
 ALLOWED_HOSTS = ["*"]
 
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG  # noqa: F405

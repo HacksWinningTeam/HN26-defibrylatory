@@ -142,6 +142,13 @@
 - **Decision:** The blocking rule stays strict (any row error counts towards `max_invalid_ratio`). The importer keeps the original resource (blocked → draft, report in admin/API) and publishes a corrected copy next to it in the same dataset ("… – wersja poprawiona (zgodna ze standardem AED)", `fixtures/corrected/`, only the reported values fixed: "ul."/"al.", TERC 1408011). Re-imports never re-publish a blocked resource unless its file changed (then the portal re-validates).
 - **Affected Docs & Tasks:** T12, T13 (aggregates the corrected copy, skips the blocked original), `fork-config/mcod_aed/importer.py`, `publishing.py`.
 
+### `DEC-017` — Retired `backend/` Stays in Compose/CI as the Hetzner Fallback Data Source; Demo Datasets Stay Drafts
+- **Date:** 2026-11-22 02:36
+- **Status:** Accepted (completes DEC-014 for T09)
+- **Context / New Info:** After the pivot the demo runs entirely on the local fork (`mcod.aed`) and the map reads the portal API (T15). The Hetzner deploy (push to `main`) has no fork (T10 cancelled); removing `backend` from `compose.prod.yaml` would leave the live map without data.
+- **Decision:** Keep `backend` (+ `db`) in `compose.yaml` / `compose.prod.yaml` / CI unchanged and frozen (not extended): on Hetzner `DANEGOV_API_URL` is empty, so the map keeps using the old backend `/api/aed/` (same DEC-008 contract). Locally the demo needs only the fork + `frontend` (`docker compose up -d --no-deps frontend`). Datasets with invented demo data (e.g. "Bydgoszcz (demo)") stay `draft` so they are never aggregated into the national dataset or shown on the map. Admin sidebar gets a "Standardy danych" section (django-suit `MENU` entry in `fork-config/local.py`). One-command demo preparation: `fork-config/aed-demo.sh [--offline]`.
+- **Affected Docs & Tasks:** T09, `docs/demo-script.md`, `fork-config/aed-demo.sh`, `fork-config/local.py`, `fork-config/README.md`.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`
