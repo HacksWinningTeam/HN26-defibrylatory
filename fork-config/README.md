@@ -65,6 +65,12 @@ all hooks are applied from `AedConfig.ready()` (`integration.py`), scoped by the
 | message on resource change page | admin | stored validation result (green / yellow / red "ZASÓB ZABLOKOWANY") |
 | `task_postrun` of the portal's resource/file validation tasks → `mcod.aed.tasks.validate_resource_standard_task` | celery | every resource of a standard dataset is validated after processing; blocking → `draft` |
 
+Import of the real sources (T12): `docker exec mcod-admin python manage.py aed_import_sources [--offline] [--no-osm] [--force]`
+mirrors the AED datasets of dane.gov.pl (discovered via the public search API; snapshot fallback in `mcod_aed/fixtures/snapshot/`)
+as datasets of their own institutions with "Standard danych" = aed-pl, plus OpenStreetMap; Warsaw and OSM are connected APIs.
+`WARSAW_API_TOKEN` is read by `fork-compose.sh` from the repo's untracked `.env` (recreate admin/api/celery after changing it).
+Legionowo's original file is blocked by validation; a corrected copy (`mcod_aed/fixtures/corrected/`) is published next to it (DEC-016).
+
 Validation API (T14): `POST /1.4/aed/validate` (multipart `file`, raw body, or JSON `{"url"}` / `{"resource_id"}`; `?strict=true`), `GET` = help;
 `GET /1.4/resources/{id}/standard-validation` = stored result. Samples: `docs/demo/samples/*.csv`.
 

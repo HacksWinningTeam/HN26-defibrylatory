@@ -6,6 +6,11 @@ import requests
 MAX_BYTES = 30 * 1024 * 1024
 TIMEOUT = 60
 
+# Connected APIs (DEC-009 / DEC-014)
+WARSAW_ACTION_PREFIX = "https://dane.um.warszawa.pl/api/action/"
+WARSAW_AED_ACTION = WARSAW_ACTION_PREFIX + "get_scb_lokalizacja_defibrylatorow"
+OSM_AED_URL = "https://openaedmap.org/api/v1/countries/PL.geojson"
+
 
 class SourceLoadError(Exception):
     pass
@@ -36,8 +41,38 @@ def fetch_url(url, max_bytes=MAX_BYTES):
         raise SourceLoadError("Nie udało się pobrać {}: {}".format(url, exc))
 
 
+def fetch_warsaw(url):
+    """Warsaw city API: POST with the free token from https://dane.um.warszawa.pl/key-api."""
+    token = os.environ.get("WARSAW_API_TOKEN", "").strip()
+    if not token:
+        raise SourceLoadError(
+            "API m.st. Warszawy wymaga tokenu (WARSAW_API_TOKEN, bezpłatny: dane.um.warszawa.pl/key-api)."
+        )
+    try:
+        resp = requests.post(url, data=b"{}", timeout=TIMEOUT,
+                             headers={"Authorization": token, "Content-Type": "application/json",
+                                      "User-Agent": "dane.gov.pl mcod.aed"})
+    except requests.RequestException as exc:
+        raise SourceLoadError("Nie udało się pobrać {}: {}".format(url, exc))
+    if resp.status_code in (401, 403):
+        raise SourceLoadError("API m.st. Warszawy odrzuciło token (HTTP {}).".format(resp.status_code))
+    if resp.status_code >= 400:
+        raise SourceLoadError("HTTP {} dla {}".format(resp.status_code, url))
+    return resp.content, "warszawa-aed.json"
+
+
+def fetch_link(url, max_bytes=MAX_BYTES):
+    """Connected API / link -> (bytes, filename)."""
+    if url.startswith(WARSAW_ACTION_PREFIX):
+        return fetch_warsaw(url)
+    return fetch_url(url, max_bytes=max_bytes)
+
+
 def resource_bytes(resource):
     """Data of a portal resource: its uploaded main file, else its link. -> (bytes, filename, format_hint)."""
+    if resource.link and getattr(resource, "type", None) == "api" and not resource.is_link_internal:
+        data, filename = fetch_link(resource.link)  # connected API: always live data
+        return data, filename, None
     main_file = getattr(resource, "main_file", None)
     if main_file:
         try:
@@ -47,6 +82,6 @@ def resource_bytes(resource):
         except (OSError, ValueError, NotImplementedError):
             pass
     if resource.link:
-        data, filename = fetch_url(resource.link)
+        data, filename = fetch_link(resource.link)
         return data, filename, None
     raise SourceLoadError("Zasób {} nie ma pliku ani linku.".format(resource.pk))

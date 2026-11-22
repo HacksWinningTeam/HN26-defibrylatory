@@ -135,6 +135,13 @@
   - Time: +~1 h; the per-source converted "wersja zgodna ze wzorcem" CSV moves to the top of the cut list.
 - **Affected Docs & Tasks:** `docs/03-architecture.md`, T11 (models + field + API attribute), T12 (imported datasets marked `aed-pl`), T13 (select by standard), T14 (validator reused + on-upload hook + blocking), `docs/05-plan.md`.
 
+### `DEC-016` — Strict Blocking Kept; Corrected Copy Published Next to a Blocked Real Source
+- **Date:** 2026-11-22 01:58
+- **Status:** Accepted (refines DEC-015)
+- **Context / New Info:** T12 import: Legionowo's real file uses the standard's column names but writes `cecha_ulicy` as "ulica"/"aleja" and a 6-digit TERC in all 24 rows, so automatic validation blocks it (draft). User: show both the correct and the incorrect version with the validator, and upload a corrected version of the file.
+- **Decision:** The blocking rule stays strict (any row error counts towards `max_invalid_ratio`). The importer keeps the original resource (blocked → draft, report in admin/API) and publishes a corrected copy next to it in the same dataset ("… – wersja poprawiona (zgodna ze standardem AED)", `fixtures/corrected/`, only the reported values fixed: "ul."/"al.", TERC 1408011). Re-imports never re-publish a blocked resource unless its file changed (then the portal re-validates).
+- **Affected Docs & Tasks:** T12, T13 (aggregates the corrected copy, skips the blocked original), `fork-config/mcod_aed/importer.py`, `publishing.py`.
+
 <!-- Template for new entries:
 ### `DEC-XXX` — `<Short Title>`
 - **Date:** `<YYYY-MM-DD HH:MM from date '+%Y-%m-%d %H:%M'>`

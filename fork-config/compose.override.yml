@@ -70,6 +70,9 @@ services:
     volumes:
       # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
       - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
+    environment:
+      # mcod.aed connected-API secret (DEC-009/014), injected by fork-compose.sh from the repo .env
+      WARSAW_API_TOKEN: ${WARSAW_API_TOKEN:-}
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -86,6 +89,9 @@ services:
     volumes:
       # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
       - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
+    environment:
+      # mcod.aed connected-API secret (DEC-009/014), injected by fork-compose.sh from the repo .env
+      WARSAW_API_TOKEN: ${WARSAW_API_TOKEN:-}
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -102,6 +108,9 @@ services:
     volumes:
       # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
       - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
+    environment:
+      # mcod.aed connected-API secret (DEC-009/014), injected by fork-compose.sh from the repo .env
+      WARSAW_API_TOKEN: ${WARSAW_API_TOKEN:-}
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -118,6 +127,9 @@ services:
     volumes:
       # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
       - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
+    environment:
+      # mcod.aed connected-API secret (DEC-009/014), injected by fork-compose.sh from the repo .env
+      WARSAW_API_TOKEN: ${WARSAW_API_TOKEN:-}
     depends_on: !override
       - mcod-db
       - mcod-rabbitmq
@@ -135,6 +147,9 @@ services:
     volumes:
       # mcod.aed plugin (DEC-014): tracked in fork-config/mcod_aed, live-mounted into the app code
       - ../../fork-config/mcod_aed:/usr/src/mcod_backend/mcod/aed
+    environment:
+      # mcod.aed connected-API secret (DEC-009/014), injected by fork-compose.sh from the repo .env
+      WARSAW_API_TOKEN: ${WARSAW_API_TOKEN:-}
     build: !reset null
     depends_on: !override []
 
